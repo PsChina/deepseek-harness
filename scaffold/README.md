@@ -9,6 +9,7 @@
 | `packages/bundle/base/cordis.patch.yml` | `llm-pi-ai` 预置 `qwen38` 路由（Q3 + Q2 双模型、`apiKeyEnv: QWEN38_API_KEY` 占位 key）；`agent-default-model` 默认 `qwen38 / Qwen3.8-27B-Q3`。web 与 headless 全部生效 |
 | `4650696ee8` Fix compaction reasoning routing | 压缩（compaction）摘要请求在非 DeepSeek 协议下的 reasoning 路由修复 |
 | `10b7f1fb3c` Restore legacy code preset sessions | 旧 code/PTC 预设会话恢复加载 |
+| `packages/client/locale`、`apps/web`、ui-sidebar 测试/快照 | Web GUI 品牌名改为 **Qwen Agent**：侧栏左上角名称（`brand.localBuild` 词条，zh/en 同步）与浏览器标签页标题（`DEFAULT_CLIENT_TITLE`）。鲸鱼 logo 与 `ui-brand-official` 占位不变；改动仅 locale 文案 + Vite 标题常量，重新 `pnpm run build` 后刷新页面即生效 |
 
 ## 快速开始
 
