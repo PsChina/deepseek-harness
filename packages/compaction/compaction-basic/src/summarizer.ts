@@ -125,7 +125,8 @@ export async function summarizeWithLlm(
   agent: Agent,
   signal?: AbortSignal,
 ): Promise<SummaryResult> {
-  const latest = agent.session.requestHeader()?.config
+  const latestHeader = agent.session.requestHeader()
+  const latest = latestHeader?.config
   const configured = config.summarizationProvider.length === 0
     ? undefined
     : { provider: config.summarizationProvider, model: config.summarizationModel }
@@ -142,6 +143,23 @@ export async function summarizeWithLlm(
     )
   }
 
+  // Compaction is an auxiliary call, but it must not silently replace an
+  // explicit effort selected for the same routed model with that model's
+  // provider default. Adapter-materialized defaults stay excluded so only a
+  // user- or agent-selected effort is inherited.
+  const latestReasoningEffort = latestHeader !== undefined
+    && latestHeader.config.provider === target.provider
+    && latestHeader.config.model === target.model
+    && latestHeader.adapterDefaults?.reasoningEffort !== true
+    ? latestHeader.config.reasoningEffort
+    : undefined
+  const agentReasoningEffort = agentTarget !== undefined
+    && agentTarget.provider === target.provider
+    && agentTarget.model === target.model
+    ? agent.options.reasoningEffort
+    : undefined
+  const reasoningEffort = latestReasoningEffort ?? agentReasoningEffort
+
   const assembler = new BlockAssembler()
   const messages: Message[] = [
     ...input.messages,
@@ -153,6 +171,7 @@ export async function summarizeWithLlm(
   const options: GenerateOptions = {
     provider: target.provider,
     model: target.model,
+    ...reasoningEffort === undefined ? {} : { reasoningEffort },
     messages,
     ...input.system === undefined ? {} : { system: input.system },
     ...input.tools === undefined ? {} : { tools: [...input.tools] },

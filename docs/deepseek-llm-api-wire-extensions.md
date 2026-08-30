@@ -2,7 +2,7 @@
 
 English | [中文](deepseek-llm-api-wire-extensions.zh.md)
 
-This reference defines every DeepSeek Harness-specific HTTP header and additive JSON field sent by [`@deepseek-ai/dsh-llm-deepseek`](../packages/llm/llm-deepseek/README.md) on `deepseek-official` chat-completion requests. It does not redefine fields owned by the upstream DeepSeek API. The provider-neutral LLM interface and `llm-pi-ai` do not implement these additions.
+This reference defines every DeepSeek Harness-specific HTTP header and additive JSON field sent by [`@deepseek-ai/dsh-llm-deepseek`](../packages/llm/llm-deepseek/README.md) on `deepseek-official` chat-completion requests, plus the auxiliary-call purpose marker sent by `llm-pi-ai` to compatible gateways. It does not redefine fields owned by the upstream DeepSeek API. The provider-neutral LLM interface remains transport-neutral; each adapter owns its wire extensions.
 
 The adapter sends the additions to its resolved `baseURL`, including a configured gateway. They remain outside `messages`, system prompts, and tool schemas, so they do not add model-input tokens or alter the model-visible prefix.
 
@@ -27,8 +27,9 @@ The [`DeepSeekLlmApiExtensionRegistry`](../packages/llm/deepseek-llm-api-extensi
 | `x-deepseek-harness-user-id` | Every authorized chat-completion request | The stable anonymous UUID for the resolved Harness home |
 | `x-deepseek-harness-session-id` | Chat-completion requests carrying a Session id | The exact request `sessionId` string |
 | `x-deepseek-harness-compact` | Chat-completion requests whose purpose is `compaction` | The literal string `1` |
+| `x-dsh-purpose` | `llm-pi-ai` requests carrying an auxiliary call purpose | `compaction` or `session-title` |
 
-Credential failure happens before anonymous-user-id resolution, so an unauthorized request neither sends these headers nor creates the identity file. A direct request without a Session omits `x-deepseek-harness-session-id`. Session-title requests have no additional purpose header; the ordinary Session-id rule still applies when one carries a `sessionId`.
+Credential failure happens before anonymous-user-id resolution, so an unauthorized request neither sends these headers nor creates the identity file. A direct request without a Session omits `x-deepseek-harness-session-id`. The `llm-pi-ai` adapter sends `x-dsh-purpose` for an auxiliary purpose; the official DeepSeek adapter uses `x-deepseek-harness-compact` for compaction instead. The ordinary Session-id rule still applies when an auxiliary request carries a `sessionId`.
 
 ## Body-extension transaction
 

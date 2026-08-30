@@ -13,7 +13,7 @@ import {
   resolveTargetPolicy,
 } from '@deepseek-ai/dsh-compaction-basic/src/config.ts'
 import type { CompactionResult } from '@deepseek-ai/dsh-compaction'
-import LlmRuntime, { createUserMessage, ToolCallId, CONTEXT_WINDOW_EXCEEDED_CODE, createToolResultMessage, LlmAdapter , createMessage } from '@deepseek-ai/dsh-llm'
+import LlmRuntime, { createUserMessage, ToolCallId, CONTEXT_WINDOW_EXCEEDED_CODE, createToolResultMessage, LlmAdapter, ReasoningEffortId, createMessage } from '@deepseek-ai/dsh-llm'
 import type {
   ContentBlock,
   GenerateOptions,
@@ -1121,6 +1121,17 @@ class ScriptedAdapter extends LlmAdapter {
     super()
   }
 
+  override resolveModel(provider: string, model: string): Promise<LlmResolvedModelInfo> {
+    return Promise.resolve({
+      provider,
+      id: model,
+      name: model,
+      reasoning: {
+        efforts: [{ id: ReasoningEffortId('minimal'), name: 'Minimal' }],
+      },
+    })
+  }
+
   override async * stream(options: GenerateOptions): AsyncIterable<StreamChunk> {
     this.lastOptions = options
     for (const [index, block] of this.blocks.entries()) {
@@ -1218,6 +1229,26 @@ describe('default one-shot summarizer', () => {
     })
     const instruction = adapter.lastOptions?.messages.at(-1)?.content[0]
     expect(instruction?.type === 'text' ? instruction.text : '').toContain('## Primary Request and Intent')
+  })
+
+  it('inherits an explicit routed reasoning effort for the auxiliary compaction call', async () => {
+    const { adapter, compact } = await summarizerHarness([{ type: 'text', text: 'summary' }])
+    const session = conversation(1)
+    session.append('request/header', {
+      header: {
+        config: {
+          provider: MODEL,
+          model: MODEL,
+          reasoningEffort: ReasoningEffortId('minimal'),
+        },
+      },
+      reason: 'change',
+    })
+
+    await compact.runSummarize(promptInput('history'), agent(session, MODEL))
+
+    expect(adapter.lastOptions?.reasoningEffort).toBe(ReasoningEffortId('minimal'))
+    expect(adapter.lastOptions?.purpose).toBe('compaction')
   })
 
   it('replays the conversation prefix and appends the instruction as the final message', async () => {
