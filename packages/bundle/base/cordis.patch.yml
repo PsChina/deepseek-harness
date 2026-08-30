@@ -72,11 +72,12 @@
 
     # The transport-independent default for Agents created by entry points.
     # Settings may supply a saved selection; consumers read it at creation time.
+    # This fork defaults the local build to the self-hosted Qwen3.8 route.
     - id: agent-default-model
       name: '@deepseek-ai/dsh-agent-default-model'
       config:
-        provider: deepseek-official
-        model: deepseek-v4-flash
+        provider: qwen38
+        model: Qwen3.8-27B-Q3
 
     - id: jobs
       name: '@deepseek-ai/dsh-jobs-local'
@@ -97,15 +98,59 @@
     - id: credentials
       name: '@deepseek-ai/dsh-credentials-local'
 
-    # The pi-ai multi-provider twin, mounted dormant: zero routes (and no extra
-    # models in the picker) until a `llm-pi-ai:` settings section supplies provider
-    # profiles — then those routes register live, keys resolving per request
-    # through their apiKeyEnv references, and drop again when the section empties.
-    # Supplying those profiles is exactly what the web Models page does. Which
-    # adapters exist is composition; which providers run is the user's settings
-    # document.
+    # The pi-ai multi-provider twin. This fork pre-wires the self-hosted
+    # Qwen3.8 route so the local build needs no settings document; a
+    # `llm-pi-ai:` settings section still merges per provider — override or add
+    # routes, keys resolving per request through apiKeyEnv references — without
+    # a restart. Supplying such profiles is what the web Models page does.
     - id: llm-pi-ai
       name: '@deepseek-ai/dsh-llm-pi-ai'
+      config:
+        providers:
+          qwen38:
+            displayName: Qwen3.8-27B Local
+            api: openai-completions
+            baseURL: http://192.168.2.123:8098/v1
+            compat:
+              supportsDeveloperRole: false
+              maxTokensField: max_tokens
+              supportsReasoningEffort: true
+              thinkingFormat: openai
+              supportsStrictMode: false
+            reasoning: xhigh
+            transport: sse
+            timeoutMs: 600000
+            streamIdleTimeoutMs: 600000
+            apiKeyEnv: QWEN38_API_KEY
+            models:
+              - id: Qwen3.8-27B-Q3
+                name: Qwen3.8 27B Q3
+                contextWindow: 86063
+                maxTokens: 16384
+                input:
+                  - text
+                reasoningEfforts:
+                  "off": none
+                  minimal: minimal
+                  low: low
+                  medium: medium
+                  high: high
+                  xhigh: extra
+                  max: ultra
+              - id: Qwen3.8-27B-Q2
+                name: Qwen3.8 27B Q2
+                contextWindow: 144000
+                maxTokens: 8192
+                input:
+                  - text
+                reasoningEfforts:
+                  "off": none
+                  minimal: minimal
+                  low: low
+                  medium: medium
+                  high: high
+                  xhigh: extra
+                  max: ultra
 
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'
