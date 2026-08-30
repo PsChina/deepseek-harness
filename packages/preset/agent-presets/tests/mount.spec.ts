@@ -336,6 +336,13 @@ describe('rejecting a composition that cannot be used', () => {
     await expect(ctx.agentPresets.resolve('nope'))
       .rejects.toThrow(/preset "nope" not found \(available: .*standard/)
   })
+
+  it('resolves the retired code preset to the standard composition', async () => {
+    await expect(ctx.agentPresets.resolve('code')).resolves.toMatchObject({ id: 'standard' })
+
+    const agent = await agentOn(ctx, 'sess-legacy-code', 'code')
+    expect(toolNames(ctx, agent)).toEqual(['alpha'])
+  })
 })
 
 describe('the preset roster', () => {

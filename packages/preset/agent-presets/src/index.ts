@@ -51,6 +51,22 @@ export type * from './types.ts'
 /** Settings namespace carrying the user's chosen default preset. */
 export const SETTINGS_NAMESPACE = 'agent-presets'
 
+/**
+ * Preset ids written by older Web sessions that still need to be resumable.
+ *
+ * The former `code` preset was the standard coding composition. It was
+ * replaced in the shipped roster, but session headers are durable and can
+ * outlive that roster. Canonicalising only at resolution keeps new sessions
+ * on the current `standard` id while allowing those old sessions to resume.
+ */
+const LEGACY_PRESET_ALIASES: Readonly<Record<string, string>> = {
+  code: 'standard',
+}
+
+function canonicalPresetId(id: string): string {
+  return LEGACY_PRESET_ALIASES[id] ?? id
+}
+
 /** Construct one typed preset failure for the Remote carrier. */
 function remotePresetFailure<Code extends keyof AgentPresetErrorDetailsMap>(
   code: Code,
@@ -295,7 +311,7 @@ export class AgentPresets extends TypertRemoteService {
    * every running session on the preset it was composed from.
    */
   get defaultId(): string {
-    return this.settings?.get().default ?? this.config.default
+    return canonicalPresetId(this.settings?.get().default ?? this.config.default)
   }
 
   /**
@@ -341,11 +357,12 @@ export class AgentPresets extends TypertRemoteService {
    * @throws when no configured root supplies that id.
    */
   async resolve(id?: string): Promise<AgentPreset> {
-    const wanted = id ?? this.defaultId
+    const requested = id ?? this.defaultId
+    const wanted = canonicalPresetId(requested)
     const presets = await this.list()
     const found = presets.find(preset => preset.id === wanted)
     if (found === undefined) {
-      throw new UnknownPresetError(wanted, presets.map(preset => preset.id))
+      throw new UnknownPresetError(requested, presets.map(preset => preset.id))
     }
     return found
   }
