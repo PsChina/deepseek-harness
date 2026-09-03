@@ -2,5 +2,5 @@
 # side as of the last confirmed-consistent state. Both languages carry equal authority;
 # after editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.md
-2026-08-28-turn-continuation-after-truncation.md: c1d47d5881aa16dfc5e2380328ec29f936852038
-2026-08-28-turn-continuation-after-truncation.zh.md: 91e1dddc135b836ad91687ec5992f671a23540fd
+2026-08-28-turn-continuation-after-truncation.md: f8daf911a8cb1d2af7c0caedabbd4e210225c175
+2026-08-28-turn-continuation-after-truncation.zh.md: 7398546e4a21fcd03b1993e01e1de9b3e44cbf2d

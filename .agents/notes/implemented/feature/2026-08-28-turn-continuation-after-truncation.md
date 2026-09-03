@@ -26,7 +26,7 @@ At the next whole-agent idle edge, if the chain is pending, the guard queues one
 Your previous response was cut off by the output token limit before you finished. Continue exactly where you stopped; do not repeat anything you already sent.
 ```
 
-The message source is `{ kind: 'plugin', plugin: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit' }`, so the injected nudge stays attributable and renders as a collapsed plugin line instead of an ordinary user prompt. A queue failure — the agent already torn down, the inbox rejecting — clears the chain and warns with the rendered error; the loop itself never sees the exception. The pending flag makes delivery idempotent across whatever idle transitions one truncation produces, and only whole-agent idle is used, so a continuation never competes with work that already holds the next turn.
+The message source is `{ kind: 'plugin', plugin: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit' }`, so the injected nudge stays attributable and renders as a collapsed plugin line instead of an ordinary user prompt. A queue failure — the agent already torn down, the inbox rejecting — clears the chain and warns with the rendered error; the loop itself never sees the exception. The pending flag makes delivery idempotent across whatever idle transitions one truncation produces, and only whole-agent idle is used, so a continuation never competes with work that already holds the next turn. The continuation wake is deferred past that idle dispatch so status observers see the resumed turn as running, not a masked idle — [the running-status fix](../bug-fix/2026-09-04-turn-continuation-reports-running.md).
 
 ### The runaway lever
 

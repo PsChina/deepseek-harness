@@ -26,7 +26,7 @@ Status: implemented
 Your previous response was cut off by the output token limit before you finished. Continue exactly where you stopped; do not repeat anything you already sent.
 ```
 
-消息来源为 `{ kind: 'plugin', plugin: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit' }`，使这条注入的提示保持可归因，并渲染为插件折叠行而非普通用户提示。排队失败——agent 已销毁、收件箱拒绝——会清空链条并以渲染后的错误告警；循环本身永远看不到这个异常。pending 标记使投递对一次截断产生的任何空闲过渡保持幂等；且只使用整个 agent 空闲点，因此续行绝不会与已占据下一轮次的工作争抢。
+消息来源为 `{ kind: 'plugin', plugin: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit' }`，使这条注入的提示保持可归因，并渲染为插件折叠行而非普通用户提示。排队失败——agent 已销毁、收件箱拒绝——会清空链条并以渲染后的错误告警；循环本身永远看不到这个异常。pending 标记使投递对一次截断产生的任何空闲过渡保持幂等；且只使用整个 agent 空闲点，因此续行绝不会与已占据下一轮次的工作争抢。续跑唤醒被推迟到该 idle 派发之后，使状态观察者观察到恢复的回合处于 running 而非被掩盖的 idle —— [running 状态修复](../bug-fix/2026-09-04-turn-continuation-reports-running.zh.md)。
 
 ### 失控杠杆
 

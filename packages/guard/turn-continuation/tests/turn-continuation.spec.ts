@@ -12,7 +12,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import AgentLoop from '@deepseek-ai/dsh-agent-loop'
 import { mountAgentLoopTestDependencies } from '@deepseek-ai/dsh-agent-loop-testkit'
-import type { Agent } from '@deepseek-ai/dsh-agent'
+import type { Agent, AgentStatus } from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { GenerateOptions, StreamChunk } from '@deepseek-ai/dsh-llm'
 import { SessionId } from '@deepseek-ai/dsh-session'
@@ -105,6 +105,27 @@ describe('truncation continuation', () => {
     expect(notices[0]!.data.content.map(block => block.type === 'text' ? block.text : '')).toEqual([CONTINUATION])
     expect(endings(test.agent)).toEqual(['max-tokens', 'completed'])
     expect(warn).not.toHaveBeenCalled()
+  })
+
+  it('reports the continuation turn as running to status observers (Stop stays available)', async () => {
+    const test = await harness([maxTokensResponse('cut'), textResponse('done')])
+    // Register a status observer AFTER the guard, reproducing the shipped load
+    // order where the guard's `agent/status` listener precedes the session
+    // controller's status forwarder.
+    const statuses: AgentStatus[] = []
+    test.ctx.on('agent/status', ({ agent, status }) => {
+      if (agent.id === test.agent.id) statuses.push(status)
+    })
+    prompt(test.agent, 'long task')
+    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(2))
+    await test.agent.whenIdle()
+    await vi.waitFor(() => expect(statuses).toHaveLength(4))
+
+    // The truncation's idle edge must reach the observer, and the continuation
+    // turn must then read as running until it itself ends. A synchronous
+    // followup re-emits `running` inside the idle dispatch, masking the idle
+    // and leaving the observer idle while the continuation is actually running.
+    expect(statuses).toEqual(['running', 'idle', 'running', 'idle'])
   })
 
   it('continues the chain across back-to-back truncations', async () => {

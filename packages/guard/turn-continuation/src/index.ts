@@ -130,14 +130,21 @@ export function apply(ctx: Context, config: Config): void {
     const state = stateFor(agent)
     if (!state.pending) return
     state.pending = false
-    try {
-      agent.followup(createUserMessage({
-        content: [{ type: 'text', text: CONTINUATION }],
-        source: { ...PLUGIN_SOURCE, form: 'notice', summary: SUMMARY },
-      }))
-    } catch (error: unknown) {
-      state.consecutive = 0
-      ctx.logger.warn(`turn-continuation: could not queue continuation for agent "${agent.id}": ${renderThrown(error)}`)
-    }
+    // Defer the wake past this dispatch: `followup` re-enters `agent/status`
+    // synchronously (idle -> running), and a nested emit interleaves with the
+    // in-flight idle dispatch in listener order. Queued after the dispatch, the
+    // running edge always lands after the idle edge, so status observers see
+    // the continuation turn as running (the Web composer keeps offering Stop).
+    queueMicrotask(() => {
+      try {
+        agent.followup(createUserMessage({
+          content: [{ type: 'text', text: CONTINUATION }],
+          source: { ...PLUGIN_SOURCE, form: 'notice', summary: SUMMARY },
+        }))
+      } catch (error: unknown) {
+        state.consecutive = 0
+        ctx.logger.warn(`turn-continuation: could not queue continuation for agent "${agent.id}": ${renderThrown(error)}`)
+      }
+    })
   })
 }
