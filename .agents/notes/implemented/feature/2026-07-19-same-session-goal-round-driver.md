@@ -42,7 +42,7 @@ The driver classifies one closed goal-owned turn as follows:
 | cancellation of a reserved/admitted goal round, or its `aborted` result | pause and disarm |
 | `error` with code `RATE_LIMIT` or `QUOTA` | block with code `usage-limited` |
 | other `error` | block with code `turn-error` |
-| `max-tokens` | block with code `max-tokens` |
+| `max-tokens` | ignored — the [turn-continuation guard](../../../../packages/guard/turn-continuation/README.md) resumes the truncated turn, so the round's work continues ([decision](2026-08-28-turn-continuation-after-truncation.md)) |
 | failed durability checkpoint | disarm without changing durable phase |
 | `disposed` or `interrupted` | disarm |
 | plugin-added unknown result | block for inspection |
@@ -67,7 +67,7 @@ An inbox acceptance can win the microtask race immediately before plugin unload 
 
 ## Testing
 
-The unit suite uses the real agent loop and session service with only the model scripted. It covers exact sequential admission and cap enforcement, load/resume inertness, every outcome classification, rate limiting, request errors, max tokens, downstream prompt veto, pre-admission and in-flight cancellation, unrelated-human cancellation, failed-pause fallback, human-input ordering, queued and downstream revision races, forged goal attribution, failed mutation and turn checkpoints including a later one-shot injection, scheduler and custom-agent failures, session-start reset, exact lifecycle retirement, and queued/running plugin teardown. The new driver source has per-file 100% statement, branch, function, and line coverage.
+The unit suite uses the real agent loop and session service with only the model scripted. It covers exact sequential admission and cap enforcement, load/resume inertness, every outcome classification, rate limiting, request errors, the max-tokens ending left to the turn-continuation guard, downstream prompt veto, pre-admission and in-flight cancellation, unrelated-human cancellation, failed-pause fallback, human-input ordering, queued and downstream revision races, forged goal attribution, failed mutation and turn checkpoints including a later one-shot injection, scheduler and custom-agent failures, session-start reset, exact lifecycle retirement, and queued/running plugin teardown. The new driver source has per-file 100% statement, branch, function, and line coverage.
 
 A keyless ACP snapshot mounts the shipped automation app with the real goal domain, goal tools, goal driver, agent loop, persistence, and replay adapter through `cordis.yml`. One human-originated turn creates and inspects a two-round goal, the first automatic turn stops normally, and ACP cancellation of a deliberately stalled second round records a durable pause. The normalized wire transcript and external JSONL assertions prove one session, round sources `1, 2`, the lifecycle mutation, and exact replay accounting without using `echo-agent` as an application surrogate.
 

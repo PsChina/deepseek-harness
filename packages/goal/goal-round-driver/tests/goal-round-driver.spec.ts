@@ -235,7 +235,6 @@ describe('same-session goal driving', () => {
   it.each([
     ['rate limit', new LlmError('slow down', 'RATE_LIMIT')],
     ['request error', new Error('provider broke')],
-    ['max tokens', maxTokensResponse('unfinished')],
   ] as const)('disarms automatic continuation after a %s', async (_label, response) => {
     const test = await harness([response])
     test.ctx.goals.create(test.agent, { objective: 'stop safely', maxGoalRounds: 8 })
@@ -245,6 +244,20 @@ describe('same-session goal driving', () => {
 
     expect(goal).toMatchObject({ roundsStarted: 1, activation: 'disarmed' })
     expect(test.adapter.requests).toHaveLength(1)
+  })
+
+  it('keeps a goal armed through a max-tokens ending so the round continues', async () => {
+    const test = await harness([maxTokensResponse('unfinished'), textResponse('finished')])
+    test.ctx.goals.create(test.agent, { objective: 'truncation is not a stop', maxGoalRounds: 2 })
+
+    const goal = await waitForGoal(test.ctx, test.agent, current => current?.phase === 'blocked')
+
+    expect(goal).toMatchObject({ roundsStarted: 2, activation: 'disarmed' })
+    expect(goal?.blockedReason).toEqual({
+      code: 'round-limit',
+      message: 'Goal reached its configured limit of 2 rounds.',
+    })
+    expect(test.adapter.requests).toHaveLength(2)
   })
 
   it('maps a downstream step rejection to blocked without entering the round', async () => {

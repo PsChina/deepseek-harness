@@ -16,7 +16,7 @@ The foreground delegation tool uses the same selection. A non-`completed` result
 
 ## Verification
 
-The keyless SDK backend test uses `FAKE_EMPTY_MESSAGE` to emit a usage-only terminal message. The `subagent-max-tokens-partial` ACP snapshot records a child that streams text and a tool call, ends at a tool-only max-tokens step with an empty usage message in its durable log, and returns the partial text through the parent's errored tool result. Unit coverage checks empty terminal messages, cancellation, message ordering, textless non-empty messages, and exclusion of tool-result content.
+The keyless SDK backend test uses `FAKE_EMPTY_MESSAGE` to emit a usage-only terminal message. The `subagent-max-tokens-continue` recorded-session snapshot records a child that streams text and a tool call, is cut off mid-step at max-tokens (the truncated step's empty usage message stays in its durable log), and is resumed by the [turn-continuation guard](../feature/2026-08-28-turn-continuation-after-truncation.md) to completion, whose finished output reaches the parent through the tool result. Unit coverage checks empty terminal messages, cancellation, message ordering, textless non-empty messages, and exclusion of tool-result content.
 
 ## Alternatives considered
 

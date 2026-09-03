@@ -21,16 +21,41 @@
 {"type":"assistant/message","data":{"turn":1,"step":1,"message":{"role":"assistant","content":[{"type":"text","text":"Starting the write now."}],"source":{"kind":"model","provider":"deepseek-official","model":"deepseek-v4-flash","replayState":{"response":{"kind":"pi-ai","version":2,"api":"openai-completions","provider":"deepseek-official","model":"deepseek-v4-flash","stopReason":"length"},"blocks":[{"type":"text"}]}},"id":"{{message:3}}"},"usage":{"inputTokens":2864,"outputTokens":12}},"sourceEventSeqs":[12,13,14,15,16,17,18],"surfaceOp":"append"}
 {"type":"step/end","data":{"turn":1,"step":1}}
 {"type":"turn/end","data":{"turn":1,"reason":{"kind":"max-tokens"}}}
-{"type":"agent/inbox/spliced","data":{"target":"next-turn","start":0,"inserted":[{"content":[{"type":"text","text":"Continue: summarize what happened without retrying the tool."}],"source":{"kind":"user"},"role":"user","id":"{{message:4}}"}]}}
+{"type":"agent/inbox/spliced","data":{"target":"next-turn","start":0,"inserted":[{"content":[{"type":"text","text":"Your previous response was cut off by the output token limit before you finished. Continue exactly where you stopped; do not repeat anything you already sent."}],"source":{"kind":"plugin","plugin":"turn-continuation","form":"notice","summary":"previous response hit the output token limit"},"role":"user","id":"{{message:4}}"}]}}
 {"type":"turn/start","data":{"turn":2}}
 {"type":"agent/inbox/spliced","data":{"target":"next-turn","start":0,"removedCount":1,"inserted":[]}}
 {"type":"step/start","data":{"turn":2,"step":1}}
-{"type":"user/message","data":{"content":[{"type":"text","text":"Continue: summarize what happened without retrying the tool."}],"source":{"kind":"user"},"role":"user","id":"{{message:4}}"},"surfaceOp":"append"}
+{"type":"user/message","data":{"content":[{"type":"text","text":"Your previous response was cut off by the output token limit before you finished. Continue exactly where you stopped; do not repeat anything you already sent."}],"source":{"kind":"plugin","plugin":"turn-continuation","form":"notice","summary":"previous response hit the output token limit"},"role":"user","id":"{{message:4}}"},"surfaceOp":"append"}
 {"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"block-start","index":0,"blockType":"text"}}}
-{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"text-delta","index":0,"text":"The previous reply hit the output limit while a tool call was still streaming, so that call was discarded and no tool ran."}}}
-{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"block-end","index":0,"block":{"type":"text","text":"The previous reply hit the output limit while a tool call was still streaming, so that call was discarded and no tool ran."}}}}
-{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"usage","usage":{"inputTokens":64,"outputTokens":28}}}}
-{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"finish","reason":{"kind":"stop"}}}}
-{"type":"assistant/message","data":{"turn":2,"step":1,"message":{"role":"assistant","content":[{"type":"text","text":"The previous reply hit the output limit while a tool call was still streaming, so that call was discarded and no tool ran."}],"source":{"kind":"model","provider":"deepseek-official","model":"deepseek-v4-flash"},"id":"{{message:5}}"},"usage":{"inputTokens":64,"outputTokens":28}},"sourceEventSeqs":[27,28,29,30,31],"surfaceOp":"append"}
+{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"text-delta","index":0,"text":"Resuming the interrupted write."}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"block-end","index":0,"block":{"type":"text","text":"Resuming the interrupted write."}}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"block-start","index":1,"blockType":"tool-call"}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"tool-call-delta","index":1,"id":"call-2","name":"bash","argumentsDelta":"{\"command\":\"echo demo > demo.txt\",\"description\":\"Write the demo file\"}"}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"usage","usage":{"inputTokens":2881,"outputTokens":28}}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":1,"chunk":{"type":"finish","reason":{"kind":"tool-calls"}}}}
+{"type":"assistant/message","data":{"turn":2,"step":1,"message":{"role":"assistant","content":[{"type":"text","text":"Resuming the interrupted write."},{"type":"tool-call","id":"call-2","name":"bash","arguments":"{\"command\":\"echo demo > demo.txt\",\"description\":\"Write the demo file\"}"}],"source":{"kind":"model","provider":"deepseek-official","model":"deepseek-v4-flash"},"id":"{{message:5}}"},"usage":{"inputTokens":2881,"outputTokens":28}},"sourceEventSeqs":[27,28,29,30,31,32,33],"surfaceOp":"append"}
+{"type":"tool/call","data":{"turn":2,"step":1,"callId":"call-2","name":"bash","arguments":"{\"command\":\"echo demo > demo.txt\",\"description\":\"Write the demo file\"}"}}
+{"type":"tool/result","data":{"turn":2,"step":1,"message":{"source":{"kind":"tool","callId":"call-2"},"content":[{"type":"tool-result","toolCallId":"call-2","content":[{"type":"text","text":"(no output)"}],"isError":false}],"role":"user","id":"{{message:6}}"}},"sourceEventSeqs":[35],"surfaceOp":"append"}
 {"type":"step/end","data":{"turn":2,"step":1}}
+{"type":"step/start","data":{"turn":2,"step":2}}
+{"type":"assistant/chunk","data":{"turn":2,"step":2,"chunk":{"type":"block-start","index":0,"blockType":"text"}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":2,"chunk":{"type":"text-delta","index":0,"text":"Wrote demo.txt."}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":2,"chunk":{"type":"block-end","index":0,"block":{"type":"text","text":"Wrote demo.txt."}}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":2,"chunk":{"type":"usage","usage":{"inputTokens":2905,"outputTokens":9}}}}
+{"type":"assistant/chunk","data":{"turn":2,"step":2,"chunk":{"type":"finish","reason":{"kind":"stop"}}}}
+{"type":"assistant/message","data":{"turn":2,"step":2,"message":{"role":"assistant","content":[{"type":"text","text":"Wrote demo.txt."}],"source":{"kind":"model","provider":"deepseek-official","model":"deepseek-v4-flash"},"id":"{{message:7}}"},"usage":{"inputTokens":2905,"outputTokens":9}},"sourceEventSeqs":[39,40,41,42,43],"surfaceOp":"append"}
+{"type":"step/end","data":{"turn":2,"step":2}}
 {"type":"turn/end","data":{"turn":2,"reason":{"kind":"completed"}}}
+{"type":"agent/inbox/spliced","data":{"target":"next-turn","start":0,"inserted":[{"content":[{"type":"text","text":"Continue: summarize what happened without retrying the tool."}],"source":{"kind":"user"},"role":"user","id":"{{message:8}}"}]}}
+{"type":"turn/start","data":{"turn":3}}
+{"type":"agent/inbox/spliced","data":{"target":"next-turn","start":0,"removedCount":1,"inserted":[]}}
+{"type":"step/start","data":{"turn":3,"step":1}}
+{"type":"user/message","data":{"content":[{"type":"text","text":"Continue: summarize what happened without retrying the tool."}],"source":{"kind":"user"},"role":"user","id":"{{message:8}}"},"surfaceOp":"append"}
+{"type":"assistant/chunk","data":{"turn":3,"step":1,"chunk":{"type":"block-start","index":0,"blockType":"text"}}}
+{"type":"assistant/chunk","data":{"turn":3,"step":1,"chunk":{"type":"text-delta","index":0,"text":"The first turn was cut off at the output limit while its bash tool call was still streaming, so that partial call never ran. The automatic continuation resumed the same turn, re-issued the write, and created demo.txt."}}}
+{"type":"assistant/chunk","data":{"turn":3,"step":1,"chunk":{"type":"block-end","index":0,"block":{"type":"text","text":"The first turn was cut off at the output limit while its bash tool call was still streaming, so that partial call never ran. The automatic continuation resumed the same turn, re-issued the write, and created demo.txt."}}}}
+{"type":"assistant/chunk","data":{"turn":3,"step":1,"chunk":{"type":"usage","usage":{"inputTokens":2938,"outputTokens":46}}}}
+{"type":"assistant/chunk","data":{"turn":3,"step":1,"chunk":{"type":"finish","reason":{"kind":"stop"}}}}
+{"type":"assistant/message","data":{"turn":3,"step":1,"message":{"role":"assistant","content":[{"type":"text","text":"The first turn was cut off at the output limit while its bash tool call was still streaming, so that partial call never ran. The automatic continuation resumed the same turn, re-issued the write, and created demo.txt."}],"source":{"kind":"model","provider":"deepseek-official","model":"deepseek-v4-flash"},"id":"{{message:9}}"},"usage":{"inputTokens":2938,"outputTokens":46}},"sourceEventSeqs":[52,53,54,55,56],"surfaceOp":"append"}
+{"type":"step/end","data":{"turn":3,"step":1}}
+{"type":"turn/end","data":{"turn":3,"reason":{"kind":"completed"}}}

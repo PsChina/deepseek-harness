@@ -315,10 +315,9 @@ export function apply(ctx: Context): void {
           }
           return
         case 'turn/end':
-          if (event.data.reason.kind === 'max-tokens') {
-            disarm(state)
-            return
-          }
+          // A max-tokens ending is not a stop: the turn-continuation guard
+          // resumes the same turn, so the round stays live and the goal keeps
+          // its automatic authority.
           if (event.data.reason.kind !== 'aborted') return
           if (state.attempt?.phase === 'claimed' || state.attempt?.phase === 'admitted') {
             state.attempt.cancelled = true

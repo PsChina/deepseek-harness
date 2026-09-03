@@ -1,5 +1,5 @@
 version: 1
-scenario: subagent-max-tokens-partial
+scenario: subagent-max-tokens-continue
 profile: headless
 composition: default
 recording: authored

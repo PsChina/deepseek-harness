@@ -16,7 +16,7 @@ Status: implemented
 
 ## 验证
 
-无密钥 SDK 后端测试使用 `FAKE_EMPTY_MESSAGE` 发出一条仅记录 usage 的终止消息。`subagent-max-tokens-partial` ACP 快照记录一个子 agent：它流式输出文本与一次工具调用，结束于仅含工具调用的 max-tokens 步骤，持久化日志中含一条空的 usage 消息，并通过父侧的错误工具结果返回部分文本。单元覆盖检查空终止消息、取消、消息顺序、不含文本的非空消息，以及排除工具结果内容。
+无密钥 SDK 后端测试使用 `FAKE_EMPTY_MESSAGE` 发出一条仅记录 usage 的终止消息。`subagent-max-tokens-continue` 录制会话快照记录一个子 agent：它流式输出文本与一次工具调用，在步骤中途被 max-tokens 截断（被截断步骤的空 usage 消息仍留在其持久化日志中），随后由[截断续行守卫](../feature/2026-08-28-turn-continuation-after-truncation.zh.md)续行至完成，完成的输出经工具结果到达父侧。单元覆盖检查空终止消息、取消、消息顺序、不含文本的非空消息，以及排除工具结果内容。
 
 ## 考虑过的替代方案
 

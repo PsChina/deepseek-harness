@@ -3152,6 +3152,31 @@ export type ToolPresentationMode = 'native' | 'ptc' | 'both'
 
 Source: [`packages/core/tools/src/index.ts:655`](../packages/core/tools/src/index.ts)
 
+<a id="deepseek-aidsh-turn-continuation"></a>
+
+## `@deepseek-ai/dsh-turn-continuation`
+
+Requires: `agents`
+
+```ts config-catalog
+/**
+ * Plugin config, validated by the same-named schemastery schema plus the
+ * load-time check in `apply` (misconfiguration fails loud: a non-integer or
+ * sub-1 `maxConsecutive` throws at plugin load, never a silent fall-back).
+ */
+export interface Config {
+  /**
+   * Maximum auto-continuations per consecutive-truncation chain (default
+   * unbounded). A chain counts back-to-back max-tokens endings; any other
+   * turn outcome — completion, abort, error, rejection, or an interrupt —
+   * breaks the chain and resets the count, so later truncations start fresh.
+   */
+  maxConsecutive?: number
+}
+```
+
+Source: [`packages/guard/turn-continuation/src/index.ts:26`](../packages/guard/turn-continuation/src/index.ts)
+
 <a id="deepseek-aidsh-typert-loader"></a>
 
 ## `@deepseek-ai/dsh-typert-loader`

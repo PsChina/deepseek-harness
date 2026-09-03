@@ -5,3 +5,5 @@ composition: default
 recording: authored
 header:
   class: default
+workspace:
+  final: true
