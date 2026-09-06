@@ -56,7 +56,7 @@ async function harness(script: ScriptEntry[], config: TurnContinuation.Config = 
   await ctx.plugin(TurnContinuation, config)
   const adapter = new MockAdapter(script)
   ctx.llm.registerAdapter(['mock'], adapter)
-  const agent = ctx.agentLoop.create(SessionId(`tc-session-${Math.random()}`), {
+  const agent = await ctx.agentLoop.create(SessionId(`tc-session-${Math.random()}`), {
     provider: 'mock',
     model: 'mock',
   })
@@ -70,14 +70,14 @@ function prompt(agent: Agent, text: string): void {
 
 /** Every continuation notice in the agent's session log. */
 function continuations(agent: Agent): SessionEvent<'user/message'>[] {
-  return agent.session.events
+  return agent.session.snapshotEvents()
     .filter((event): event is SessionEvent<'user/message'> => event.type === 'user/message')
     .filter(event => event.data.source.kind === 'plugin' && event.data.source.plugin === 'turn-continuation')
 }
 
 /** The turn-end reason kinds, in order. */
 function endings(agent: Agent): string[] {
-  return agent.session.events.flatMap(event => event.type === 'turn/end' ? [event.data.reason.kind] : [])
+  return agent.session.snapshotEvents().flatMap(event => event.type === 'turn/end' ? [event.data.reason.kind] : [])
 }
 
 /** All text of one model request, joined for content assertions. */
@@ -221,7 +221,7 @@ describe('truncation continuation', () => {
     await ctx.plugin(AgentLoop, { agents: [] })
     const adapter = new MockAdapter([maxTokensResponse('cut'), textResponse('done')])
     ctx.llm.registerAdapter(['mock'], adapter)
-    const agent = ctx.agentLoop.create(SessionId(`tc-late-${Math.random()}`), {
+    const agent = await ctx.agentLoop.create(SessionId(`tc-late-${Math.random()}`), {
       provider: 'mock',
       model: 'mock',
     })
