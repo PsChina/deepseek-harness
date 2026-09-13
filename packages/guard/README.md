@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-The `guard/` group keeps the agent loop productive by watching for three common failure patterns. `turn-continuation` treats a turn cut off at the model output token limit as an interruption rather than a stop, resuming the same work at the next idle point so a truncated answer can finish without a human nudge. `repeat-tool-reminder` notices when the model repeats the exact same tool call and reminds it to change approach or finish, so a stuck loop stops burning time and tokens. `timeout-policy` puts a time limit on tool calls that declare one, so a hung call returns a clear timed-out error to the model instead of stalling the session. All three ship enabled in the `dsh` base bundle; a composition can tune or remove them.
+The `guard/` group watches the agent loop for three failure patterns. `turn-continuation` treats a turn cut off at the output token limit as an interruption rather than a stop, resuming the work at the next idle point so a truncated answer finishes unaided. `repeat-tool-reminder` reminds the model to change approach or finish when it repeats an identical tool call, so a stuck loop stops burning tokens. `timeout-policy` times out tool calls that declare a limit, returning a timed-out error instead of stalling the session. All three ship enabled in the `dsh` base bundle; a composition can tune or remove them.
 
 ## Table of Contents
 

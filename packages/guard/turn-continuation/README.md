@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-A long answer that outgrows the model output token limit ends its turn mid-work, and without help the agent just stops: the model has nothing more to say because it was never told to continue. `dsh-turn-continuation` treats a truncation as an interruption, not a stop. When a turn ends at the output token limit, the guard queues one fixed continuation prompt at the next whole-agent idle point, so the model resumes exactly where it stopped without a human nudge. By default a chain of back-to-back truncations keeps earning continuations — the runaway lever is the optional `maxConsecutive` cap. Any other turn ending — completion, abort, error, rejection, or interrupt — resets the chain, so a fresh start begins a fresh count. The guard tracks each agent separately in memory and ships enabled in the `dsh` base bundle.
+A long answer that outgrows the output token limit ends its turn mid-work, and the agent just stops. `dsh-turn-continuation` treats that truncation as an interruption, not a stop: when a turn ends at the output token limit, the guard queues one fixed continuation prompt at the next whole-agent idle point to resume exactly where it stopped. Back-to-back truncations keep earning continuations by default, capped by the optional `maxConsecutive` setting. Any other turn ending — completion, abort, error, rejection, or interrupt — resets the chain. The guard tracks each agent in memory and ships enabled in the `dsh` base bundle.
 
 ## Table of Contents
 

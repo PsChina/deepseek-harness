@@ -34,7 +34,7 @@ Your previous response was cut off by the output token limit before you finished
 
 ### 与 goal-round 驱动器的交互
 
-[同会话 goal-round 驱动器](2026-07-19-same-session-goal-round-driver.zh.md) 不再把 max-tokens 结局当作停止结果。它的 `turn/end` 处理器除 `aborted` 外一律忽略，因为守卫会续行同一轮次、Round 的工作因此继续；下一轮 goal round 在续行工作落定时调度。基础 bundle 把守卫挂载在驱动器之前。驱动器笔记的结算表已就地改写以保持一致。
+[同会话 goal-round 驱动器](../../archived/feature/2026-07-19-same-session-goal-round-driver.md) 不再把 max-tokens 结局当作停止结果。它的 `turn/end` 处理器除 `aborted` 外一律忽略，因为守卫会续行同一轮次、Round 的工作因此继续；下一轮 goal round 在续行工作落定时调度。基础 bundle 把守卫挂载在驱动器之前。驱动器笔记的结算表已就地改写以保持一致。
 
 ## 测试
 
@@ -54,7 +54,7 @@ Your previous response was cut off by the output token limit before you finished
 ## 后果
 
 - 被截断的轮次对所有 agent 类型自动续行；任何地方都不再需要人工"继续"。
-- [子 agent 输出选取规则](../bug-fix/2026-08-10-subagent-empty-terminal-message-output.zh.md) 仍然管辖没有续行发生的运行——被取消的子 agent、ACP 后端、无守卫的组合——但在已发布 profile 下，max-tokens 子 agent 如今通常会完成并返回完整输出。
+- [子 agent 输出选取规则](../../archived/bug-fix/2026-08-10-subagent-empty-terminal-message-output.md) 仍然管辖没有续行发生的运行——被取消的子 agent、ACP 后端、无守卫的组合——但在已发布 profile 下，max-tokens 子 agent 如今通常会完成并返回完整输出。
 - 中途被截断的 goal round 不再停止驱动器；被续行的轮次延续同一 Round。
 - 会话日志每次截断新增一条插件署名消息；摘要行是协议常量。
 - 反复被截断回答的 token 开销在设计上无上限；`maxConsecutive` 是唯一杠杆。

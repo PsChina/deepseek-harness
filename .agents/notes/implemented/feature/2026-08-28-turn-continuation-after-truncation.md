@@ -34,7 +34,7 @@ The chain is unbounded by default: back-to-back truncations keep earning continu
 
 ### Interaction with the goal-round driver
 
-The [same-session goal-round driver](2026-07-19-same-session-goal-round-driver.md) no longer treats a max-tokens ending as a stopping outcome. Its `turn/end` handler ignores everything but `aborted`, because the guard resumes the same turn and the round's work therefore continues; the next goal round is scheduled when the resumed work settles. The base bundle mounts the guard before the driver. The driver note's settlement table was rewritten in place to match.
+The [same-session goal-round driver](../../archived/feature/2026-07-19-same-session-goal-round-driver.md) no longer treats a max-tokens ending as a stopping outcome. Its `turn/end` handler ignores everything but `aborted`, because the guard resumes the same turn and the round's work therefore continues; the next goal round is scheduled when the resumed work settles. The base bundle mounts the guard before the driver. The driver note's settlement table was rewritten in place to match.
 
 ## Testing
 
@@ -54,7 +54,7 @@ Keyless recorded-session snapshots replay the shipped profile: `sdk/max-tokens-c
 ## Consequences
 
 - A truncated turn continues automatically for every agent kind; a human "continue" is no longer required anywhere.
-- The [subagent output selection rule](../bug-fix/2026-08-10-subagent-empty-terminal-message-output.md) still governs runs where no continuation happens — cancelled children, ACP backends, guard-less compositions — but under the shipped profile a max-tokens child now typically finishes and returns full output.
+- The [subagent output selection rule](../../archived/bug-fix/2026-08-10-subagent-empty-terminal-message-output.md) still governs runs where no continuation happens — cancelled children, ACP backends, guard-less compositions — but under the shipped profile a max-tokens child now typically finishes and returns full output.
 - A goal round truncated mid-work no longer stops the driver; the resumed turn continues the same round.
 - The session log gains one plugin-attributed message form per truncation; the summary line is a protocol constant.
 - Token spend on a repeatedly truncated answer is unbounded by design; `maxConsecutive` is the only lever.
