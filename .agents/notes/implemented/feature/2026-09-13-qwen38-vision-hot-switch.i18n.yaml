@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/feature/2026-09-13-qwen38-vision-hot-switch.md
+2026-09-13-qwen38-vision-hot-switch.md: 478532777ed7b4df4d28a60ad3054b53d3b0a6c5
+2026-09-13-qwen38-vision-hot-switch.zh.md: f331a0197c82475e392f67994d9499847787da20

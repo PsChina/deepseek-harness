@@ -121,6 +121,10 @@
             transport: sse
             timeoutMs: 600000
             streamIdleTimeoutMs: 600000
+            # Qwen's local vision decoder accepts PNG and JPEG but not WebP.
+            # Preserve ordinary Retina screenshots as their PNG request version.
+            requestImagePixelBudget: 16777216
+            requestImageMaxBytes: 8388608
             apiKeyEnv: QWEN38_API_KEY
             models:
               - id: Qwen3.8-27B-Q3
@@ -129,6 +133,7 @@
                 maxTokens: 16384
                 input:
                   - text
+                  - image
                 reasoningEfforts:
                   "off": none
                   minimal: minimal
@@ -143,6 +148,7 @@
                 maxTokens: 8192
                 input:
                   - text
+                  - image
                 reasoningEfforts:
                   "off": none
                   minimal: minimal
@@ -162,6 +168,9 @@
     # provider requests and authorized history reads.
     - id: attachment-local
       name: '@deepseek-ai/dsh-attachment-local'
+      config:
+        normalizedImageMaxPixels: 16777216
+        normalizedImageMaxBytes: 8388608
 
     # Full-text session search is opt-in. `openAt: never` keeps
     # ctx.sessionQuery mounted — exact reads, titles, and lineage traces
