@@ -12,6 +12,12 @@ import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
+import type { ContextFormed } from '@deepseek-ai/dsh-llm'
+declare module '@deepseek-ai/dsh-llm' {
+  interface MessageSourceMap {
+    'turn-continuation': { kind: 'turn-continuation' } & ContextFormed
+  }
+}
 import type { MessageSource } from '@deepseek-ai/dsh-llm'
 import type { Session, SessionEvent } from '@deepseek-ai/dsh-session'
 
@@ -38,11 +44,11 @@ export const Config: z<Config> = z.object({
 })
 
 /**
- * The `{kind:'plugin'}` source stamped on every continuation this guard
- * injects — the label is load-bearing (an unlabeled context would render as
- * a user prompt in derived history).
+ * The `{kind:'turn-continuation'}` source stamped on every continuation this
+ * guard injects — the label is load-bearing (an unlabeled context would render
+ * as a user prompt in derived history).
  */
-const PLUGIN_SOURCE: MessageSource = { kind: 'plugin', plugin: 'turn-continuation' }
+const PLUGIN_SOURCE: MessageSource = { kind: 'turn-continuation' }
 
 /** The model-facing continuation prompt, pinned verbatim in the tests. */
 const CONTINUATION =
@@ -96,7 +102,7 @@ export function apply(ctx: Context, config: Config): void {
     return state
   }
 
-  ctx.on('agent/session-start', ({ agent }) => {
+  ctx.on('agent/created', ({ agent }) => {
     chains.set(agent, { consecutive: 0, pending: false })
   })
 

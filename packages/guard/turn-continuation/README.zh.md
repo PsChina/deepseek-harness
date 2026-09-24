@@ -72,7 +72,7 @@ kind: "package-reference"
 
 ### 截断链
 
-每个 agent 的链是 `WeakMap<Agent, ChainState>` 中的 `{ consecutive, pending }`，在 `agent/session-start` 时预先记录；对守卫挂载前已在运行的 agent 则惰性建立。
+每个 agent 的链是 `WeakMap<Agent, ChainState>` 中的 `{ consecutive, pending }`，在 `agent/created` 时预先记录；对守卫挂载前已在运行的 agent 则惰性建立。
 
 - **只有 max-tokens 结局计数。** `session/event` 监视持久化的 `turn/end` 事件；除 `max-tokens` 外的所有原因——完成、中止、出错、拒绝、打断——都重置 `consecutive` 并清除 `pending`。
 - **上限即停且重置。** 设置 `maxConsecutive` 后，达到或超过上限的链记录点名 agent 与上限的警告、重置并不再排队。
@@ -80,7 +80,7 @@ kind: "package-reference"
 
 ### 续行投递
 
-守卫排入一条携带固定续行文本与插件来源 `{kind: 'plugin', plugin: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit'}` 的 `user/message`。来源标注至关重要：未标注的注入消息会在派生历史中渲染成普通用户提示。排队失败——agent 已销毁、收件箱拒绝——会清空链并以渲染后的错误告警，使循环本身永远看不到这个异常。
+守卫排入一条携带固定续行文本与插件来源 `{kind: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit'}` 的 `user/message`。来源标注至关重要：未标注的注入消息会在派生历史中渲染成普通用户提示。排队失败——agent 已销毁、收件箱拒绝——会清空链并以渲染后的错误告警，使循环本身永远看不到这个异常。
 
 ### 源码地图
 

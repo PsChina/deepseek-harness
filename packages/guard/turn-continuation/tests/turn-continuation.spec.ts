@@ -28,8 +28,7 @@ const CONTINUATION =
 
 /** The notice-form plugin source stamped on every continuation. */
 const NOTICE_SOURCE = {
-  kind: 'plugin',
-  plugin: 'turn-continuation',
+  kind: 'turn-continuation',
   form: 'notice',
   summary: 'previous response hit the output token limit',
 }
@@ -72,7 +71,7 @@ function prompt(agent: Agent, text: string): void {
 function continuations(agent: Agent): SessionEvent<'user/message'>[] {
   return agent.session.snapshotEvents()
     .filter((event): event is SessionEvent<'user/message'> => event.type === 'user/message')
-    .filter(event => event.data.source.kind === 'plugin' && event.data.source.plugin === 'turn-continuation')
+    .filter(event => event.data.source.kind === 'turn-continuation')
 }
 
 /** The turn-end reason kinds, in order. */
@@ -212,7 +211,7 @@ describe('truncation continuation', () => {
   })
 
   it('starts the chain lazily for agents running before the guard mounted', async () => {
-    // The session-start hook only pre-records agents created after the guard
+    // The agent-creation hook only pre-records agents created after the guard
     // mounted; an already-running agent must get its chain from the first
     // turn ending it sees.
     const ctx = new Context()
@@ -251,7 +250,7 @@ describe('truncation continuation', () => {
     const warn = vi.spyOn(test.ctx.logger, 'warn')
     const realFollowup = test.agent.followup.bind(test.agent)
     vi.spyOn(test.agent, 'followup').mockImplementation((input) => {
-      if (input.source.kind === 'plugin') throw new Error('queue exploded')
+      if (input.source.kind === 'turn-continuation') throw new Error('queue exploded')
       realFollowup(input)
     })
     prompt(test.agent, 'long task')
@@ -269,7 +268,7 @@ describe('truncation continuation', () => {
     const warn = vi.spyOn(test.ctx.logger, 'warn')
     const realFollowup = test.agent.followup.bind(test.agent)
     vi.spyOn(test.agent, 'followup').mockImplementation((input) => {
-      if (input.source.kind === 'plugin') throw 'string-failure'
+      if (input.source.kind === 'turn-continuation') throw 'string-failure'
       realFollowup(input)
     })
     prompt(test.agent, 'long task')

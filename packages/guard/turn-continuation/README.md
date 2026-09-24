@@ -72,7 +72,7 @@ The guard is built on four commitments:
 
 ### The truncation chain
 
-Each agent's chain is `{ consecutive, pending }` in a `WeakMap<Agent, ChainState>`, pre-recorded on `agent/session-start` and started lazily for agents that were already running when the guard mounted.
+Each agent's chain is `{ consecutive, pending }` in a `WeakMap<Agent, ChainState>`, pre-recorded on `agent/created` and started lazily for agents that were already running when the guard mounted.
 
 - **Only max-tokens endings count.** `session/event` watches durable `turn/end` events; every reason other than `max-tokens` — completed, aborted, errored, rejected, interrupted — resets `consecutive` and clears `pending`.
 - **The cap stops and resets.** With `maxConsecutive` set, a chain at or past the cap logs a warning naming the agent and the cap, resets, and queues nothing.
@@ -80,7 +80,7 @@ Each agent's chain is `{ consecutive, pending }` in a `WeakMap<Agent, ChainState
 
 ### Continuation delivery
 
-The guard queues a `user/message` with the pinned continuation text and the plugin source `{kind: 'plugin', plugin: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit'}`. The source label is load-bearing: an unlabeled injected message would render as an ordinary user prompt in derived history. A queue failure — the agent already torn down, an inbox rejection — clears the chain and warns with the rendered error, so the loop itself never sees the exception.
+The guard queues a `user/message` with the pinned continuation text and the plugin source `{kind: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit'}`. The source label is load-bearing: an unlabeled injected message would render as an ordinary user prompt in derived history. A queue failure — the agent already torn down, an inbox rejection — clears the chain and warns with the rendered error, so the loop itself never sees the exception.
 
 ### Source map
 

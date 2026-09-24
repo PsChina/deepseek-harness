@@ -1,6 +1,70 @@
-# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
-# side as of the last confirmed-consistent state. Both languages carry equal authority;
-# after editing either side, bring the other along and re-record with:
+# Bilingual-pair consistency record for README.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
 #   pnpm run verify-translation-pairing --write packages/guard/turn-continuation/README.md
-README.md: 8dfa8c0f99d53e8074d97262e4382e3fc1010ecc
-README.zh.md: 51337589bc340946ed4826902b071a93a77e8129
+/:
+  en: 84a8987b029160d5
+  zh: 96b122173832de30
+/deepseek-ai-dsh-turn-continuation:
+  en: ba24b3efd8b1e497
+  zh: 8df46f4a2b975c55
+/deepseek-ai-dsh-turn-continuation/summary:
+  en: 9ae16b54970a99ca
+  zh: 7db9f75838407cdc
+/deepseek-ai-dsh-turn-continuation/table-of-contents:
+  en: d152484eb41ac6b4
+  zh: 98f1710ce10cc76b
+/deepseek-ai-dsh-turn-continuation/use-this-package:
+  en: 81f7fe443f4a5bf8
+  zh: e33946f8531b12ee
+/deepseek-ai-dsh-turn-continuation/use-this-package/when-to-choose-it:
+  en: 1e8a6497005e88f8
+  zh: 028c325dbcbc5ed0
+/deepseek-ai-dsh-turn-continuation/use-this-package/setting-the-runaway-lever:
+  en: 551b7bc69b91812b
+  zh: feffc369b749595f
+/deepseek-ai-dsh-turn-continuation/use-this-package/what-you-get:
+  en: 89e6157c26e3211e
+  zh: f85012267a56e96a
+/deepseek-ai-dsh-turn-continuation/understand-the-implementation:
+  en: 7d68f8812925602d
+  zh: 48041d81d76f769d
+/deepseek-ai-dsh-turn-continuation/understand-the-implementation/design-philosophy:
+  en: 6c2065547054df4f
+  zh: ebdf90769538abee
+/deepseek-ai-dsh-turn-continuation/understand-the-implementation/the-truncation-chain:
+  en: f09b3e7e94148b24
+  zh: 82b29a279e5651da
+/deepseek-ai-dsh-turn-continuation/understand-the-implementation/continuation-delivery:
+  en: 04c094d7534a5686
+  zh: 3f1966631719a47a
+/deepseek-ai-dsh-turn-continuation/understand-the-implementation/source-map:
+  en: 0295c8dca4b092a0
+  zh: 3c114aef57c1fdb9
+/deepseek-ai-dsh-turn-continuation/further-exploration:
+  en: a9e5216764cd3e5c
+  zh: 896477a8c024f008
+/deepseek-ai-dsh-turn-continuation/model-experience:
+  en: 215e7ba838619b7b
+  zh: a311da3843709f90
+/deepseek-ai-dsh-turn-continuation/model-experience/continuation-prompt:
+  en: 657c19dde1517b14
+  zh: 8c071dc2008b5a8f
+/deepseek-ai-dsh-turn-continuation/model-experience/continuation-prompt/what-the-model-sees:
+  en: 2794899993fc2146
+  zh: 6574497c73db3f2b
+/deepseek-ai-dsh-turn-continuation/model-experience/continuation-prompt/what-the-model-sees/continuation-prompt:
+  en: c99bbbf52339885d
+  zh: b0e3cbbf17f260d3
+/deepseek-ai-dsh-turn-continuation/model-experience/continuation-prompt/token-effect:
+  en: 260bd406f801ea91
+  zh: 27b404dc13f3f899
+/deepseek-ai-dsh-turn-continuation/model-experience/continuation-prompt/kv-cache-effect:
+  en: 070fe0dec2688b5a
+  zh: c6d014dfe6123a90
+/deepseek-ai-dsh-turn-continuation/known-limitations-and-deferred-work:
+  en: 31dc45611b6bcccb
+  zh: dc15aab762c6f7e9
+/deepseek-ai-dsh-turn-continuation/known-limitations-and-deferred-work/dev-note:
+  en: afff5520405e2c61
+  zh: 0b6e4fb2c3c7532e
