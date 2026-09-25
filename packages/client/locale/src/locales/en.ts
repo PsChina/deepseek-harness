@@ -33,7 +33,7 @@ export const en = {
   'collapse': 'Collapse',
   'expand': 'Expand',
   'back': 'Back',
-  'brand.localBuild': 'Qwen Agent',
+  'brand.localBuild': 'DSH Local Build',
   'workspace.defaultName': 'Default workspace',
   'unknown': 'Unknown',
   'none': 'None',
