@@ -821,6 +821,19 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
     expect(await readFile(path, 'utf8')).toBe(fixture)
   })
 
+  it('limits the default max-tokens continuation chain', async () => {
+    const scenario = sdkScenarios.find(candidate => candidate.name === 'max-tokens-default-cap')
+    if (scenario === undefined) throw new Error('max-tokens-default-cap snapshot is missing')
+    const sessionPath = join(scenario.dir, 'session.v4.jsonl')
+    const events = records(await readFile(sessionPath, 'utf8'))
+    expect(events.filter(event => event.type === 'user/message'
+      && (event.data as JsonObject | undefined)?.source
+      && ((event.data as JsonObject).source as JsonObject).kind === 'turn-continuation')).toHaveLength(3)
+    expect(events.filter(event => event.type === 'turn/end')
+      .map(event => ((event.data as JsonObject).reason as JsonObject).kind))
+      .toEqual(Array.from({ length: 4 }, () => 'max-tokens'))
+  })
+
   for (const scenario of sdkScenarios) {
     const scenarioTest = recording
       && (scenario.manifest.recording === 'authored' || scenario.manifest.sessionFormat !== undefined)
@@ -883,6 +896,9 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
         expect(events.filter(event => event.type === 'tool/result').at(-1)).toMatchObject({ data: { message: {
           toolCallId: 'call_dynamic_ping', isError: false, content: [{ type: 'text', text: 'pong' }],
         } } })
+      }
+      if (scenario.name === 'max-tokens-default-cap') {
+        expect(results.at(-1)?.finalResponse).toBe('Starting the write now.')
       }
       if (scenario.name === 'subagent-activation-limit') {
         expect(ordered).toHaveLength(2)

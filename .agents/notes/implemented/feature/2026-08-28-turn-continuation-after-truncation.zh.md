@@ -30,7 +30,7 @@ Your previous response was cut off by the output token limit before you finished
 
 ### 失控杠杆
 
-链条默认无上限：背靠背的截断会不断换取续行，直到工作完成或被中止。这是明确的产品决策——截断不是终点，持续触及上限的模型就应继续下去。失控 token 杠杆是可选项 `maxConsecutive`（整数且 >= 1）：达到或超过上限的链记录点名 agent 与上限的警告、重置并不再排队。非整数或小于 1 的值在插件加载时响亮失败。
+链条最初默认无上限：背靠背的截断会不断换取续行，直到工作完成或被中止。当前默认是自动续行三次；[有界默认值 Agent Note](../bug-fix/2026-09-25-bounded-default-turn-continuation-chain.zh.md)记录了这项部分取代。可配置的 `maxConsecutive` 仍要求为 >= 1 的整数：链到达或超过上限时，守卫会记录包含 agent 与上限的警告、重置并停止排队。非整数或小于 1 的值会在插件加载时响亮失败。
 
 ### 与 goal-round 驱动器的交互
 
@@ -57,7 +57,7 @@ Your previous response was cut off by the output token limit before you finished
 - [子 agent 输出选取规则](../../archived/bug-fix/2026-08-10-subagent-empty-terminal-message-output.md) 仍然管辖没有续行发生的运行——被取消的子 agent、ACP 后端、无守卫的组合——但在已发布 profile 下，max-tokens 子 agent 如今通常会完成并返回完整输出。
 - 中途被截断的 goal round 不再停止驱动器；被续行的轮次延续同一 Round。
 - 会话日志每次截断新增一条插件署名消息；摘要行是协议常量。
-- 反复被截断回答的 token 开销在设计上无上限；`maxConsecutive` 是唯一杠杆。
+- `maxConsecutive` 控制自动续行的最大次数；随包提供的默认值为三次，详见[有界默认值 Agent Note](../bug-fix/2026-09-25-bounded-default-turn-continuation-chain.zh.md)。
 
 ## 已知限制与遗留工作
 

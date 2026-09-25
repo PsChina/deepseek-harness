@@ -1,0 +1,19 @@
+# Bilingual-pair consistency record for 2026-09-25-bounded-default-turn-continuation-chain.md (docs/i18n/README.md): per heading
+# section, a hash of its English and Chinese blocks outside code blocks and generated regions.
+# After editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-09-25-bounded-default-turn-continuation-chain.md
+/agent-note-bounded-default-for-automatic-turn-continuation:
+  en: 0ffad077a1d339ec
+  zh: 88f7eccacc01e114
+/agent-note-bounded-default-for-automatic-turn-continuation/problem:
+  en: 297f5250b5e8f736
+  zh: ccdcf03da594c72f
+/agent-note-bounded-default-for-automatic-turn-continuation/decision:
+  en: 92db3f24ff8b87a6
+  zh: 180cd40a4524a809
+/agent-note-bounded-default-for-automatic-turn-continuation/alternatives-considered:
+  en: e16deda0fd04502c
+  zh: cbe28984ba6c008a
+/agent-note-bounded-default-for-automatic-turn-continuation/consequences:
+  en: 47b8576c5b1befbd
+  zh: 08091ef2343d4877

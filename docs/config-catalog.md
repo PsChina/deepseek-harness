@@ -3994,7 +3994,7 @@ export type ToolPresentationMode = 'native' | 'ptc' | 'both'
 ## `@deepseek-ai/dsh-turn-continuation`
 
 - `inject`: `agents`
-- `source`: [`packages/guard/turn-continuation/src/index.ts:26`](../packages/guard/turn-continuation/src/index.ts)
+- `source`: [`packages/guard/turn-continuation/src/index.ts:32`](../packages/guard/turn-continuation/src/index.ts)
 
 ```ts config-catalog
 /**
@@ -4004,10 +4004,10 @@ export type ToolPresentationMode = 'native' | 'ptc' | 'both'
  */
 export interface Config {
   /**
-   * Maximum auto-continuations per consecutive-truncation chain (default
-   * unbounded). A chain counts back-to-back max-tokens endings; any other
-   * turn outcome — completion, abort, error, rejection, or an interrupt —
-   * breaks the chain and resets the count, so later truncations start fresh.
+   * Maximum auto-continuations per consecutive-truncation chain (default 3).
+   * A chain counts back-to-back max-tokens endings; any other turn outcome —
+   * completion, abort, error, rejection, or an interrupt — breaks the chain
+   * and resets the count, so later truncations start fresh.
    */
   maxConsecutive?: number
 }

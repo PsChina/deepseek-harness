@@ -9,7 +9,7 @@ English | [中文](README.zh.md)
 
 ## Summary
 
-A long answer that outgrows the output token limit ends its turn mid-work, and the agent just stops. `dsh-turn-continuation` treats that truncation as an interruption, not a stop: when a turn ends at the output token limit, the guard queues one fixed continuation prompt at the next whole-agent idle point to resume exactly where it stopped. Back-to-back truncations keep earning continuations by default, capped by the optional `maxConsecutive` setting. Any other turn ending — completion, abort, error, rejection, or interrupt — resets the chain. The guard tracks each agent in memory and ships enabled in the `dsh` base bundle.
+A long answer that outgrows the output token limit ends its turn mid-work, and the agent just stops. `dsh-turn-continuation` treats that truncation as an interruption, not a stop: when a turn ends at the output token limit, the guard queues one fixed continuation prompt at the next whole-agent idle point to resume exactly where it stopped. By default, each agent can receive three automatic continuations in one consecutive-truncation chain; a later truncation logs a warning and stops. Deployments can raise the `maxConsecutive` limit. Any other turn ending — completion, abort, error, rejection, or interrupt — resets the chain. The guard tracks each agent in memory and ships enabled in the `dsh` base bundle.
 
 ## Table of Contents
 
@@ -25,7 +25,7 @@ A long answer that outgrows the output token limit ends its turn mid-work, and t
 <a id="use-this-package"></a>
 ## Use this package
 
-Mount this plugin when a truncated answer should finish itself instead of waiting for a human to say "continue". There is nothing to learn or wire: the `dsh` base bundle already runs it, and the unbounded default works for most sessions — set the cap below when token cost matters more than one-shot completion.
+Mount this plugin when a truncated answer should finish itself instead of waiting for a human to say "continue". There is nothing to learn or wire: the `dsh` base bundle already runs it. The default allows three automatic continuations, and deployments can set a higher finite limit for longer tasks.
 
 ### When to choose it
 
@@ -33,7 +33,7 @@ Choose it for long autonomous turns — big edits, generated files, long answers
 
 ### Setting the runaway lever
 
-When you want a ceiling on how many auto-continuations one truncation chain may earn, mount the plugin with configuration:
+The default allows three automatic continuations per chain. Set a higher finite limit when longer continuation chains are needed:
 
 ```yaml
 - name: '@deepseek-ai/dsh-turn-continuation'
@@ -43,13 +43,13 @@ When you want a ceiling on how many auto-continuations one truncation chain may 
 
 | Field | Default | Meaning |
 |---|---|---|
-| `maxConsecutive` | unbounded | Maximum auto-continuations per chain of back-to-back max-tokens endings; when the chain reaches the cap the guard logs a warning and stops, and the count resets |
+| `maxConsecutive` | `3` | Maximum automatic continuations per chain of back-to-back max-tokens endings; after those continuations, the next truncation logs a warning and stops |
 
 A chain counts only back-to-back max-tokens endings: a completed, aborted, errored, or rejected turn breaks it, so later truncations start from a fresh count. A non-integer or sub-1 `maxConsecutive` fails at startup with a clear error, never a silent change of behavior. The generated [configuration catalog](../../../docs/config-catalog.md#deepseek-aidsh-turn-continuation) documents every accepted value.
 
 ### What you get
 
-When a turn ends at the output token limit, the next whole-agent idle point delivers the continuation prompt below, attributed to the plugin, and the model resumes the same work in a new turn. The continuation renders in the transcript as a collapsed plugin line with the one-line summary "previous response hit the output token limit". If the resumed turn itself is cut off, the chain continues until it completes, aborts, or reaches the cap.
+When a turn ends at the output token limit, the next whole-agent idle point delivers the continuation prompt below, attributed to the plugin, and the model resumes the same work in a new turn. The continuation renders in the transcript as a collapsed plugin line with the one-line summary "previous response hit the output token limit". If resumed turns keep reaching the limit, the guard queues at most three automatic continuations by default; the next truncation logs a warning and stops the chain.
 
 -----
 
@@ -121,7 +121,7 @@ Your previous response was cut off by the output token limit before you finished
 
 #### Token effect
 
-One small fixed message per truncation, plus the model's resumed output; with the unbounded default a repeatedly truncated answer keeps growing turn by turn until it finishes, which is the runaway the optional `maxConsecutive` cap bounds.
+One small fixed message per automatic continuation, plus the model's resumed output. The default cap limits one consecutive-truncation chain to three automatic continuations; a higher configured limit allows more.
 
 #### KV Cache effect
 
@@ -134,7 +134,7 @@ Append-only; each continuation follows the reusable request prefix of the trunca
 These limits define when the guard is a poor fit. They are current package constraints, not a task backlog.
 
 - **One fixed prompt** — the continuation text is a protocol constant, not per-task or per-model configurable; the model is told only that it was cut off and where to resume.
-- **Unbounded by default is a product decision** — a model that keeps hitting the limit is continued until it finishes unless the deployment sets `maxConsecutive`; token spend on a pathological loop is the lever's job.
+- **Finite continuation chain** — the default allows three automatic continuations, then stops after the next truncation; deployments can configure a higher finite `maxConsecutive` value.
 - **In-memory chain state** — a session resumed from persistence starts with a fresh chain, so a truncation straddling a process restart is not continued.
 - **Idle-point delivery only** — a continuation is never queued mid-turn; if the agent never reaches idle (a hung step), the continuation waits for that step to settle.
 - **No deduplication of truncated output** — the guard asks the model to "not repeat anything you already sent" but does not compare or rewrite; a model that resumes from a slightly earlier point is the model's error, visible in the transcript.
@@ -147,6 +147,6 @@ These limits define when the guard is a poor fit. They are current package const
 
 This Dev Note is working context for maintainers; it is explicitly non-authoritative. Shipped behavior and limits live in the sections above and the code.
 
-The [turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.md) records the decision and alternatives, including the unbounded default and its runaway lever. Its interaction with the [goal round driver](../../goal/goal-round-driver/README.md) is deliberate: the driver stopped disarming rounds on max-tokens endings once this guard shipped, because the resumed turn continues the same round.
+The [turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.md) records why max-tokens endings resume automatically; the [bounded-default Agent Note](../../../.agents/notes/implemented/bug-fix/2026-09-25-bounded-default-turn-continuation-chain.md) records the finite default. The guard and the [goal round driver](../../goal/goal-round-driver/README.md) treat a resumed turn as the same round.
 
 </details>

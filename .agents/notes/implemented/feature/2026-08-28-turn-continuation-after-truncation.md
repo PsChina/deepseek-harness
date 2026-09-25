@@ -30,7 +30,7 @@ The message source is `{ kind: 'plugin', plugin: 'turn-continuation', form: 'not
 
 ### The runaway lever
 
-The chain is unbounded by default: back-to-back truncations keep earning continuations until the work completes or is aborted. That is an explicit product decision — a truncation is not a stop, and a model that keeps hitting the limit should keep going. The runaway-token lever is the optional `maxConsecutive` (integer >= 1): a chain at or past the cap logs a warning naming the agent and the cap, resets, and queues nothing. A non-integer or sub-1 value fails loud at plugin load.
+The chain was originally unbounded by default: back-to-back truncations kept earning continuations until the work completed or was aborted. The current default is three automatic continuations; the [bounded-default Agent Note](../bug-fix/2026-09-25-bounded-default-turn-continuation-chain.md) records this partial supersession. The configurable `maxConsecutive` remains an integer >= 1: a chain at or past the cap logs a warning naming the agent and the cap, resets, and queues nothing. A non-integer or sub-1 value fails loud at plugin load.
 
 ### Interaction with the goal-round driver
 
@@ -57,7 +57,7 @@ Keyless recorded-session snapshots replay the shipped profile: `sdk/max-tokens-c
 - The [subagent output selection rule](../../archived/bug-fix/2026-08-10-subagent-empty-terminal-message-output.md) still governs runs where no continuation happens — cancelled children, ACP backends, guard-less compositions — but under the shipped profile a max-tokens child now typically finishes and returns full output.
 - A goal round truncated mid-work no longer stops the driver; the resumed turn continues the same round.
 - The session log gains one plugin-attributed message form per truncation; the summary line is a protocol constant.
-- Token spend on a repeatedly truncated answer is unbounded by design; `maxConsecutive` is the only lever.
+- `maxConsecutive` controls the maximum automatic continuations; the shipped default is three, as recorded in the [bounded-default Agent Note](../bug-fix/2026-09-25-bounded-default-turn-continuation-chain.md).
 
 ## Known limitations and deferred work
 

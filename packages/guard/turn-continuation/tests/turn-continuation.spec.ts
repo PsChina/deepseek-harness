@@ -1,7 +1,7 @@
 /**
  * Unit suite for @deepseek-ai/dsh-turn-continuation: chain semantics (one
- * continuation per truncation, back-to-back chaining, the optional
- * `maxConsecutive` cap, and reset on every non-max-tokens ending), the
+ * continuation per truncation, back-to-back chaining, the default and
+ * configured `maxConsecutive` caps, and reset on every non-max-tokens ending), the
  * pinned prompt and notice source, queue-failure containment, and fail-loud
  * configuration — all driven through a real agent loop against the scripted
  * mock adapter (no network). Shipped-profile behavior is covered by the
@@ -161,6 +161,21 @@ describe('truncation continuation', () => {
     expect(warn.mock.calls[0]![0]).toContain(`agent "${test.agent.id}"`)
     expect(warn.mock.calls[0]![0]).toContain('stopped at 1 consecutive continuations')
     expect(endings(test.agent)).toEqual(['max-tokens', 'max-tokens'])
+  })
+
+  it('defaults to three continuations and stops after the next truncation', async () => {
+    const test = await harness(Array.from({ length: 5 }, (_, index) => maxTokensResponse(`cut ${index + 1}`)))
+    const warn = vi.spyOn(test.ctx.logger, 'warn')
+    prompt(test.agent, 'long task')
+    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(4))
+    await test.agent.whenIdle()
+
+    expect(test.adapter.requests).toHaveLength(4)
+    expect(continuations(test.agent)).toHaveLength(3)
+    expect(warn).toHaveBeenCalledTimes(1)
+    expect(warn.mock.calls[0]![0]).toContain(`agent "${test.agent.id}"`)
+    expect(warn.mock.calls[0]![0]).toContain('stopped at 3 consecutive continuations')
+    expect(endings(test.agent)).toEqual(Array.from({ length: 4 }, () => 'max-tokens'))
   })
 
   it('resets the chain after a completed turn so later truncations continue again', async () => {
