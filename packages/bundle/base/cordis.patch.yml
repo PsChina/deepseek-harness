@@ -149,8 +149,8 @@
             models:
               - id: Qwen3.8-27B-Q3
                 name: Qwen3.8 27B Q3
-                contextWindow: 84000
-                maxTokens: 16384
+                contextWindow: 82000
+                maxTokens: 9216
                 input:
                   - text
                   - image
@@ -164,8 +164,8 @@
                   max: ultra
               - id: Qwen3.8-27B-Q2
                 name: Qwen3.8 27B Q2
-                contextWindow: 144000
-                maxTokens: 8192
+                contextWindow: 170000
+                maxTokens: 16384
                 input:
                   - text
                   - image
@@ -396,6 +396,17 @@
 
     - id: compaction-basic
       name: '@deepseek-ai/dsh-compaction-basic'
+      config:
+        # Both Qwen routes reach their 80% pressure thresholds with output and headroom reserved.
+        modelPolicies:
+          - provider: qwen38
+            model: Qwen3.8-27B-Q3
+            headroomTokens: 7184
+            maxTokens: 9216
+          - provider: qwen38
+            model: Qwen3.8-27B-Q2
+            headroomTokens: 17616
+            maxTokens: 16384
 
     # Human `/compact`: one useful reduction below the automatic threshold. Backend
     # independent, so it follows whichever compaction service this leaf mounts.

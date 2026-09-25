@@ -11,6 +11,14 @@ import * as yaml from 'js-yaml'
 import { entryListSchema } from '@deepseek-ai/cordis-plugin-include'
 import { evaluate } from '@deepseek-ai/cordis-plugin-loader'
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isUnknownArray(value: unknown): value is unknown[] {
+  return Array.isArray(value)
+}
+
 describe('dsh-base bundle', () => {
   it('declares a parseable patch list through the dsh.bundle.patch manifest field', () => {
     const root = fileURLToPath(new URL('..', import.meta.url))
@@ -47,6 +55,30 @@ describe('dsh-base bundle', () => {
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-codex')
     expect(manifest.dependencies).not.toHaveProperty('@deepseek-ai/dsh-subagent-claude-code')
     expect(manifest.dependencies).toHaveProperty('@deepseek-ai/dsh-web-fetch-http')
+    expect(rows.find(row => row.id === 'compaction-basic')?.config).toMatchObject({
+      modelPolicies: [{
+        provider: 'qwen38',
+        model: 'Qwen3.8-27B-Q3',
+        headroomTokens: 7_184,
+        maxTokens: 9_216,
+      }, {
+        provider: 'qwen38',
+        model: 'Qwen3.8-27B-Q2',
+        headroomTokens: 17_616,
+        maxTokens: 16_384,
+      }],
+    })
+    const llmConfig = rows.find(row => row.id === 'llm-pi-ai')?.config
+    const providers = isRecord(llmConfig?.['providers']) ? llmConfig['providers'] : undefined
+    const qwen38 = isRecord(providers?.['qwen38']) ? providers['qwen38'] : undefined
+    const models = qwen38?.['models']
+    if (!isUnknownArray(models)) throw new TypeError('base patch must configure Qwen3.8 models')
+    const q3 = models.find(model => isRecord(model) && model['id'] === 'Qwen3.8-27B-Q3')
+    if (!isRecord(q3)) throw new TypeError('base patch must configure the Qwen3.8 Q3 model')
+    expect(q3).toMatchObject({ contextWindow: 82_000, maxTokens: 9_216 })
+    const q2 = models.find(model => isRecord(model) && model['id'] === 'Qwen3.8-27B-Q2')
+    if (!isRecord(q2)) throw new TypeError('base patch must configure the Qwen3.8 Q2 model')
+    expect(q2).toMatchObject({ contextWindow: 170_000, maxTokens: 16_384 })
   })
 
   it('gates each shell stack by platform with a symmetric disabled expression', () => {

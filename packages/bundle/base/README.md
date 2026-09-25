@@ -69,6 +69,8 @@ On macOS and Linux you get the bash shell tools; on Windows you get the PowerShe
 
 To change what a profile built on this core provides — a different default model, a stricter permission mode, extra or fewer tools — edit your profile's `cordis.patch.yml` or add a later bundle. Each patch entry replaces the target's whole configuration, so restate every setting you want to keep. Keep the sandboxed filesystem provider as the single file-write path: adding the plain filesystem provider on top of it makes the profile fail to load.
 
+The Qwen servers support `92,000` context tokens for Q3 and `192,000` for Q2, while the profile budgets `82,000` and `170,000` in Harness. Q3 uses `9,216`-token request and summary caps plus `7,184` tokens of compaction headroom, giving it a `65,600`-token pressure threshold and an `11,645`-token retained tail. Q2 uses `16,384`-token request and summary caps plus `17,616` tokens of headroom, giving it a `136,000`-token threshold and a `24,578`-token retained tail. Other routes use the shared `65,536`-token default unless overridden.
+
 -----
 
 <a id="understand-the-implementation"></a>

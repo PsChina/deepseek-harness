@@ -368,6 +368,32 @@ describe('compact configuration and defaults', () => {
     expect(retentionOnly).not.toHaveProperty('retainRatio')
   })
 
+  it('keeps the Qwen Q3 pressure threshold above the retained tail', () => {
+    const target = { provider: 'qwen38', model: 'Qwen3.8-27B-Q3' }
+    const policy = resolveTargetPolicy(resolveConfig({
+      modelPolicies: [{ ...target, headroomTokens: 7_184, maxTokens: 9_216 }],
+    }), target)
+
+    expect(resolveCompactSpec(policy, 82_000, 9_216)).toMatchObject({
+      thresholdTokens: 65_600,
+      retainTokens: 11_645,
+      maxTokens: 9_216,
+    })
+  })
+
+  it('keeps the Qwen Q2 pressure threshold at 80% of its budget', () => {
+    const target = { provider: 'qwen38', model: 'Qwen3.8-27B-Q2' }
+    const policy = resolveTargetPolicy(resolveConfig({
+      modelPolicies: [{ ...target, headroomTokens: 17_616, maxTokens: 16_384 }],
+    }), target)
+
+    expect(resolveCompactSpec(policy, 170_000, 16_384)).toMatchObject({
+      thresholdTokens: 136_000,
+      retainTokens: 24_578,
+      maxTokens: 16_384,
+    })
+  })
+
   it('merges exact provider/model policy overrides and scales ratios per model', () => {
     const config = resolveConfig({
       headroomTokens: 0,
@@ -1747,6 +1773,82 @@ describe('automatic listener and loader composition', () => {
     await preStep(ctx, agent(small, MODEL))
     expect(small.snapshotEvents().some(event => event.type === 'compaction/start')).toBe(false)
     expect(compact.calls).toHaveLength(1)
+  })
+
+  it('runs Qwen Q3 pressure compaction before its request reaches the context limit', async () => {
+    const ctx = createContext(82_000)
+    const resolveModelInfo = vi.spyOn(ctx.llm, 'resolveModelInfo').mockResolvedValue({
+      provider: 'qwen38',
+      id: 'Qwen3.8-27B-Q3',
+      name: 'Qwen3.8 Q3',
+      context: { contextWindow: 82_000 },
+      defaultMaxTokens: 9_216,
+    })
+    const warnings: string[] = []
+    ctx.logger.warn = ((message: string) => void warnings.push(message)) as typeof ctx.logger.warn
+    const compact = new TestCompactionEngine(ctx, {
+      modelPolicies: [{
+        provider: 'qwen38',
+        model: 'Qwen3.8-27B-Q3',
+        headroomTokens: 7_184,
+        maxTokens: 9_216,
+      }],
+    })
+    const session = conversation(4, 'Qwen fixture '.repeat(3_000))
+    session.append('request/header', {
+      header: {
+        config: { provider: 'qwen38', model: 'Qwen3.8-27B-Q3', maxTokens: 9_216 },
+      },
+      reason: 'change',
+    })
+
+    expect(ctx.tokenMeter.measure(session).totalTokens).toBeGreaterThan(65_600)
+    await expect(preStep(ctx, agent(session, 'fallback-model')))
+      .resolves.toEqual({ kind: 'enter', messages: [] })
+
+    expect(resolveModelInfo).toHaveBeenCalledWith('qwen38', 'Qwen3.8-27B-Q3', SIGNAL)
+    expect(compact.calls).toHaveLength(1)
+    expect(session.snapshotEvents().some(event => event.type === 'compaction/summary')).toBe(true)
+    expect(warnings).toEqual([])
+  })
+
+  it('runs Qwen Q2 pressure compaction before its request reaches the context limit', async () => {
+    const ctx = createContext(170_000)
+    const resolveModelInfo = vi.spyOn(ctx.llm, 'resolveModelInfo').mockResolvedValue({
+      provider: 'qwen38',
+      id: 'Qwen3.8-27B-Q2',
+      name: 'Qwen3.8 Q2',
+      context: { contextWindow: 170_000 },
+      defaultMaxTokens: 16_384,
+    })
+    const warnings: string[] = []
+    ctx.logger.warn = ((message: string) => void warnings.push(message)) as typeof ctx.logger.warn
+    const compact = new TestCompactionEngine(ctx, {
+      modelPolicies: [{
+        provider: 'qwen38',
+        model: 'Qwen3.8-27B-Q2',
+        headroomTokens: 17_616,
+        maxTokens: 16_384,
+      }],
+    })
+    const session = conversation(4, 'Qwen Q2 fixture '.repeat(4_500))
+    session.append('request/header', {
+      header: {
+        config: { provider: 'qwen38', model: 'Qwen3.8-27B-Q2', maxTokens: 16_384 },
+      },
+      reason: 'change',
+    })
+
+    const measuredTokens = ctx.tokenMeter.measure(session).totalTokens
+    expect(measuredTokens).toBeGreaterThan(136_000)
+    expect(measuredTokens).toBeLessThan(170_000)
+    await expect(preStep(ctx, agent(session, 'fallback-model')))
+      .resolves.toEqual({ kind: 'enter', messages: [] })
+
+    expect(resolveModelInfo).toHaveBeenCalledWith('qwen38', 'Qwen3.8-27B-Q2', SIGNAL)
+    expect(compact.calls).toHaveLength(1)
+    expect(session.snapshotEvents().some(event => event.type === 'compaction/summary')).toBe(true)
+    expect(warnings).toEqual([])
   })
 
   it('skips pre-step pressure when the step signal is already aborted', async () => {
