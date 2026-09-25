@@ -69,6 +69,17 @@
             config:
               - id: compaction-basic
                 name: '@deepseek-ai/dsh-compaction-basic'
+                config:
+                  # Preset compaction instances do not inherit the host row's config.
+                  modelPolicies:
+                    - provider: qwen38
+                      model: Qwen3.8-27B-Q3
+                      headroomTokens: 7184
+                      maxTokens: 55000
+                    - provider: qwen38
+                      model: Qwen3.8-27B-Q2
+                      headroomTokens: 3616
+                      maxTokens: 100000
               - id: command-compact
                 name: '@deepseek-ai/dsh-command-compact'
               - id: tool-result-pruner

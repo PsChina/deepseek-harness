@@ -19,6 +19,9 @@ import type {
 /** Default request-pressure fraction for every routed model. */
 const DEFAULT_THRESHOLD_RATIO = 0.8
 
+/** Default additional pressure headroom and inherited summary output cap. */
+const DEFAULT_HEADROOM_TOKENS = 68_000
+
 /** Default verbatim-tail fraction for every routed model. */
 const DEFAULT_RETAIN_RATIO = 0.16
 
@@ -72,7 +75,7 @@ export function resolveConfig(config: BasicCompactionConfig = {}): ResolvedConfi
     throw new Error('BasicCompactionConfig: auto must be a boolean')
   }
 
-  const headroomTokens = config.headroomTokens ?? 65_536
+  const headroomTokens = config.headroomTokens ?? DEFAULT_HEADROOM_TOKENS
   const maxTokens = config.maxTokens ?? headroomTokens
   assertPositiveInteger('BasicCompactionConfig.maxTokens (explicit or from headroomTokens)', maxTokens)
   const thresholdRatio = config.thresholdRatio ?? DEFAULT_THRESHOLD_RATIO

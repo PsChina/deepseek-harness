@@ -312,11 +312,11 @@ describe('compact configuration and defaults', () => {
 
     expect(resolved).toEqual({
       thresholdRatio: 0.8,
-      headroomTokens: 65_536,
+      headroomTokens: 68_000,
       retainRatio: 0.16,
       summarizationProvider: '',
       summarizationModel: '',
-      maxTokens: 65_536,
+      maxTokens: 68_000,
       compactionRetries: 1,
       maxOverflowRetries: 1,
       modelPolicies: [],
@@ -454,12 +454,12 @@ describe('compact configuration and defaults', () => {
   })
 
   it.each([
-    [1_048_576, 256_000, 727_040, 126_812],
+    [1_048_576, 256_000, 724_576, 126_812],
     [1_000_000, 0, 800_000, 160_000],
     [1_000_000, 100_000, 800_000, 144_000],
-    [1_000_000, 134_464, 800_000, 138_485],
-    [1_000_000, 256_000, 678_464, 119_040],
-  ])('reserves 64K headroom in window %i with output cap %i', (window, output, threshold, retained) => {
+    [1_000_000, 134_464, 797_536, 138_485],
+    [1_000_000, 256_000, 676_000, 119_040],
+  ])('reserves default headroom in window %i with output cap %i', (window, output, threshold, retained) => {
     const policy = resolveTargetPolicy(resolveConfig({}), { provider: MODEL, model: MODEL })
 
     expect(resolveCompactSpec(policy, window, output)).toMatchObject({

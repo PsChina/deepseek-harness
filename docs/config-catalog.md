@@ -672,7 +672,7 @@ export interface BasicCompactionConfig extends CompactionPolicyConfig {
 export interface CompactionPolicyConfig {
   /** Window fraction for pressure; capped at context window minus reserved output and `headroomTokens`. Defaults to `0.8`. */
   thresholdRatio?: number
-  /** Additional pressure headroom beyond the routed output reservation. Non-negative integer; defaults to `65536`. */
+  /** Additional pressure headroom beyond the routed output reservation. Non-negative integer; defaults to `68000`. */
   headroomTokens?: number
   /** Recent context retained as a fraction of context window minus reserved output tokens. Defaults to `0.16`. */
   retainRatio?: number
@@ -4219,6 +4219,39 @@ export interface Config {
 }
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-web-search-perplexity -->
+
+<!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-web-search-searxng -->
+<a id="deepseek-aidsh-web-search-searxng"></a>
+
+## `@deepseek-ai/dsh-web-search-searxng`
+
+- `inject`: `web`
+- `source`: [`packages/web/web-search-searxng/src/index.ts:40`](../packages/web/web-search-searxng/src/index.ts)
+
+```ts config-catalog
+/** Plugin config (all optional — `apply` fills env-var and constant defaults). */
+export interface Config {
+  /** Instance root, e.g. `http://127.0.0.1:8888`; falls back to `$SEARXNG_URL`. Empty or unparseable makes the provider unavailable. */
+  baseURL?: string
+  /** SearXNG category names to restrict the search to; omitted sends no filter. */
+  categories?: string[]
+  /** Explicit engine names to search; omitted sends no filter. */
+  engines?: string[]
+  /** SearXNG language code, e.g. `en` or `zh`; omitted sends no filter. */
+  language?: string
+  /** Recency window sent as `time_range`; omitted sends no filter. */
+  timeRange?: 'day' | 'week' | 'month' | 'year'
+  /** Safe-search level (0 off, 1 moderate, 2 strict); omitted leaves the instance default. */
+  safesearch?: 0 | 1 | 2
+  /** Resource backstop for one search, in milliseconds. */
+  timeoutMs?: number
+  /** Per-source snippet cap in characters. */
+  maxSnippetChars?: number
+  /** Extra request headers merged over the default `accept`. */
+  headers?: Record<string, string>
+}
+```
+<!-- END GENERATED config-catalog:@deepseek-ai/dsh-web-search-searxng -->
 
 <!-- BEGIN GENERATED config-catalog:@deepseek-ai/dsh-webhook-github -->
 <a id="deepseek-aidsh-webhook-github"></a>
