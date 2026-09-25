@@ -60,12 +60,12 @@ describe('dsh-base bundle', () => {
         provider: 'qwen38',
         model: 'Qwen3.8-27B-Q3',
         headroomTokens: 7_184,
-        maxTokens: 9_216,
+        maxTokens: 55_000,
       }, {
         provider: 'qwen38',
         model: 'Qwen3.8-27B-Q2',
-        headroomTokens: 17_616,
-        maxTokens: 16_384,
+        headroomTokens: 3_616,
+        maxTokens: 100_000,
       }],
     })
     const llmConfig = rows.find(row => row.id === 'llm-pi-ai')?.config
@@ -78,7 +78,7 @@ describe('dsh-base bundle', () => {
     expect(q3).toMatchObject({ contextWindow: 82_000, maxTokens: 9_216 })
     const q2 = models.find(model => isRecord(model) && model['id'] === 'Qwen3.8-27B-Q2')
     if (!isRecord(q2)) throw new TypeError('base patch must configure the Qwen3.8 Q2 model')
-    expect(q2).toMatchObject({ contextWindow: 170_000, maxTokens: 16_384 })
+    expect(q2).toMatchObject({ contextWindow: 100_000, maxTokens: 16_384 })
   })
 
   it('gates each shell stack by platform with a symmetric disabled expression', () => {

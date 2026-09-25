@@ -371,26 +371,26 @@ describe('compact configuration and defaults', () => {
   it('keeps the Qwen Q3 pressure threshold above the retained tail', () => {
     const target = { provider: 'qwen38', model: 'Qwen3.8-27B-Q3' }
     const policy = resolveTargetPolicy(resolveConfig({
-      modelPolicies: [{ ...target, headroomTokens: 7_184, maxTokens: 9_216 }],
+      modelPolicies: [{ ...target, headroomTokens: 7_184, maxTokens: 55_000 }],
     }), target)
 
     expect(resolveCompactSpec(policy, 82_000, 9_216)).toMatchObject({
       thresholdTokens: 65_600,
       retainTokens: 11_645,
-      maxTokens: 9_216,
+      maxTokens: 55_000,
     })
   })
 
-  it('keeps the Qwen Q2 pressure threshold at 80% of its budget', () => {
+  it('keeps the Qwen Q2 pressure threshold at 80% of its request window', () => {
     const target = { provider: 'qwen38', model: 'Qwen3.8-27B-Q2' }
     const policy = resolveTargetPolicy(resolveConfig({
-      modelPolicies: [{ ...target, headroomTokens: 17_616, maxTokens: 16_384 }],
+      modelPolicies: [{ ...target, headroomTokens: 3_616, maxTokens: 100_000 }],
     }), target)
 
-    expect(resolveCompactSpec(policy, 170_000, 16_384)).toMatchObject({
-      thresholdTokens: 136_000,
-      retainTokens: 24_578,
-      maxTokens: 16_384,
+    expect(resolveCompactSpec(policy, 100_000, 16_384)).toMatchObject({
+      thresholdTokens: 80_000,
+      retainTokens: 13_378,
+      maxTokens: 100_000,
     })
   })
 
@@ -1791,7 +1791,7 @@ describe('automatic listener and loader composition', () => {
         provider: 'qwen38',
         model: 'Qwen3.8-27B-Q3',
         headroomTokens: 7_184,
-        maxTokens: 9_216,
+        maxTokens: 55_000,
       }],
     })
     const session = conversation(4, 'Qwen fixture '.repeat(3_000))
@@ -1813,12 +1813,12 @@ describe('automatic listener and loader composition', () => {
   })
 
   it('runs Qwen Q2 pressure compaction before its request reaches the context limit', async () => {
-    const ctx = createContext(170_000)
+    const ctx = createContext(100_000)
     const resolveModelInfo = vi.spyOn(ctx.llm, 'resolveModelInfo').mockResolvedValue({
       provider: 'qwen38',
       id: 'Qwen3.8-27B-Q2',
       name: 'Qwen3.8 Q2',
-      context: { contextWindow: 170_000 },
+      context: { contextWindow: 100_000 },
       defaultMaxTokens: 16_384,
     })
     const warnings: string[] = []
@@ -1827,11 +1827,11 @@ describe('automatic listener and loader composition', () => {
       modelPolicies: [{
         provider: 'qwen38',
         model: 'Qwen3.8-27B-Q2',
-        headroomTokens: 17_616,
-        maxTokens: 16_384,
+        headroomTokens: 3_616,
+        maxTokens: 100_000,
       }],
     })
-    const session = conversation(4, 'Qwen Q2 fixture '.repeat(4_500))
+    const session = conversation(4, 'Qwen Q2 fixture '.repeat(2_600))
     session.append('request/header', {
       header: {
         config: { provider: 'qwen38', model: 'Qwen3.8-27B-Q2', maxTokens: 16_384 },
@@ -1840,8 +1840,8 @@ describe('automatic listener and loader composition', () => {
     })
 
     const measuredTokens = ctx.tokenMeter.measure(session).totalTokens
-    expect(measuredTokens).toBeGreaterThan(136_000)
-    expect(measuredTokens).toBeLessThan(170_000)
+    expect(measuredTokens).toBeGreaterThan(80_000)
+    expect(measuredTokens).toBeLessThan(100_000)
     await expect(preStep(ctx, agent(session, 'fallback-model')))
       .resolves.toEqual({ kind: 'enter', messages: [] })
 
