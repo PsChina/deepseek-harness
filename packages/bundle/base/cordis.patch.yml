@@ -149,7 +149,7 @@
             models:
               - id: Qwen3.8-27B-Q3
                 name: Qwen3.8 27B Q3
-                contextWindow: 86063
+                contextWindow: 84000
                 maxTokens: 16384
                 input:
                   - text
