@@ -1,6 +1,7 @@
 # Agent Note: Bounded default for automatic turn continuation
 
 Status: implemented
+Archived: 2026-09-26
 
 English | [中文](2026-09-25-bounded-default-turn-continuation-chain.zh.md)
 

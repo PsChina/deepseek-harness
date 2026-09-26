@@ -31,19 +31,16 @@ export const inject = ['agents']
  */
 export interface Config {
   /**
-   * Maximum auto-continuations per consecutive-truncation chain (default 3).
-   * A chain counts back-to-back max-tokens endings; any other turn outcome —
-   * completion, abort, error, rejection, or an interrupt — breaks the chain
-   * and resets the count, so later truncations start fresh.
+   * Optional maximum auto-continuations per consecutive-truncation chain;
+   * when omitted, the chain has no limit. A chain counts back-to-back
+   * max-tokens endings; any other turn outcome — completion, abort, error,
+   * rejection, or an interrupt — breaks the chain and resets the count.
    */
   maxConsecutive?: number
 }
 
-/** Default cap for automatic continuations after consecutive truncations. */
-const DEFAULT_MAX_CONSECUTIVE = 3
-
 export const Config: z<Config> = z.object({
-  maxConsecutive: z.number().min(1).default(DEFAULT_MAX_CONSECUTIVE),
+  maxConsecutive: z.number().min(1),
 })
 
 /**
@@ -74,16 +71,16 @@ function renderThrown(value: unknown): string {
 }
 
 /**
- * Resolve and validate the chain cap per the fail-loud contract.
+ * Validate the optional chain cap per the fail-loud contract.
  * @param value - raw config value, if the deployment set one.
- * @returns the configured cap, or the default of three.
+ * @returns the configured cap, or `undefined` when continuations are unlimited.
  */
-function validateMaxConsecutive(value: number | undefined): number {
-  const cap = value ?? DEFAULT_MAX_CONSECUTIVE
-  if (!Number.isInteger(cap) || cap < 1) {
-    throw new Error(`turn-continuation: invalid maxConsecutive ${cap} — must be an integer >= 1`)
+function validateMaxConsecutive(value: number | undefined): number | undefined {
+  if (value === undefined) return undefined
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`turn-continuation: invalid maxConsecutive ${value} — must be an integer >= 1`)
   }
-  return cap
+  return value
 }
 
 /**
@@ -121,13 +118,13 @@ export function apply(ctx: Context, config: Config): void {
       state.pending = false
       return
     }
-    if (state.consecutive >= cap) {
+    if (cap !== undefined && state.consecutive >= cap) {
       state.consecutive = 0
       state.pending = false
       ctx.logger.warn(`turn-continuation: agent "${agent.id}" stopped at ${cap} consecutive continuations`)
       return
     }
-    state.consecutive += 1
+    if (cap !== undefined) state.consecutive += 1
     state.pending = true
   })
 

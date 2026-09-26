@@ -16,7 +16,7 @@ The stop was a defect in three ways. The work was not done — the model was cut
 
 ### Detection and the truncation chain
 
-`session/event` watches durable `turn/end` events. A reason of kind `max-tokens` for a live agent increments that agent's chain, `{ consecutive, pending }`, held in a `WeakMap<Agent, ChainState>` and pre-recorded on `agent/session-start` (started lazily for agents that were already running when the guard mounted). Every other ending — completed, aborted, errored, rejected, interrupted — resets the chain to a fresh count. Detection reads the durable reason only; model text and adapter signals are never consulted, so a truncation is detected exactly once per turn.
+`session/event` watches durable `turn/end` events. A reason of kind `max-tokens` for a live agent marks a continuation pending and increments that agent's chain count only when `maxConsecutive` is configured; `{ consecutive, pending }` is held in a `WeakMap<Agent, ChainState>` and pre-recorded on `agent/session-start` (started lazily for agents that were already running when the guard mounted). Every other ending — completed, aborted, errored, rejected, interrupted — resets the chain to a fresh count. Detection reads the durable reason only; model text and adapter signals are never consulted, so a truncation is detected exactly once per turn.
 
 ### Delivery
 
@@ -28,9 +28,9 @@ Your previous response was cut off by the output token limit before you finished
 
 The message source is `{ kind: 'plugin', plugin: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit' }`, so the injected nudge stays attributable and renders as a collapsed plugin line instead of an ordinary user prompt. A queue failure — the agent already torn down, the inbox rejecting — clears the chain and warns with the rendered error; the loop itself never sees the exception. The pending flag makes delivery idempotent across whatever idle transitions one truncation produces, and only whole-agent idle is used, so a continuation never competes with work that already holds the next turn. The continuation wake is deferred past that idle dispatch so status observers see the resumed turn as running, not a masked idle — [the running-status fix](../bug-fix/2026-09-04-turn-continuation-reports-running.md).
 
-### The runaway lever
+### Default limit and deployment cap
 
-The chain was originally unbounded by default: back-to-back truncations kept earning continuations until the work completed or was aborted. The current default is three automatic continuations; the [bounded-default Agent Note](../bug-fix/2026-09-25-bounded-default-turn-continuation-chain.md) records this partial supersession. The configurable `maxConsecutive` remains an integer >= 1: a chain at or past the cap logs a warning naming the agent and the cap, resets, and queues nothing. A non-integer or sub-1 value fails loud at plugin load.
+Back-to-back truncations earn continuations until the work completes or is stopped; no count limit is applied by default. A deployment may set `maxConsecutive` to an integer >= 1 to cap the chain. At the cap, the guard logs a warning naming the agent and the cap, resets, and queues nothing. A non-integer or sub-1 value fails loud at plugin load.
 
 ### Interaction with the goal-round driver
 
@@ -38,9 +38,9 @@ The [same-session goal-round driver](../../archived/feature/2026-07-19-same-sess
 
 ## Testing
 
-The unit suite drives the real agent loop and session service with the shared scripted model adapter. It covers: one continuation completing a truncated turn with the pinned prompt and plugin source asserted verbatim; a back-to-back chain earning two continuations; the `maxConsecutive: 1` cap warning and stopping; the cap resetting after a completed turn so the next truncation earns a fresh continuation; an aborted continuation breaking the chain; lazy chain creation for an agent running before the guard mounted; an orphan session ending at max-tokens producing no request; a throwing `followup` clearing the chain with the rendered error (both Error and non-Error throws); and load-time rejection of `maxConsecutive` values of 0 and 1.5 with the exact error text. The package reaches per-file 100% statement, branch, function, and line coverage on `src/`.
+The unit suite drives the real agent loop and session service with the shared scripted model adapter. It covers: one continuation completing a truncated turn with the pinned prompt and plugin source asserted verbatim; an unlimited default chain continuing through four consecutive truncations; the `maxConsecutive: 1` cap warning and stopping; the cap resetting after a completed turn so the next truncation earns a fresh continuation; an aborted continuation breaking the chain; lazy chain creation for an agent running before the guard mounted; an orphan session ending at max-tokens producing no request; a throwing `followup` clearing the chain with the rendered error (both Error and non-Error throws); and load-time rejection of `maxConsecutive` values of 0 and 1.5 with the exact error text. The package reaches per-file 100% statement, branch, function, and line coverage on `src/`.
 
-Keyless recorded-session snapshots replay the shipped profile: `sdk/max-tokens-continue` shows a top-level truncated turn resumed and completed; `session/subagent-max-tokens-continue` shows a child cut off mid-step, resumed by the guard, and returning its finished output through the parent's tool result; `sdk/multi-turn` keeps the ordinary multi-turn behavior intact.
+Keyless recorded-session snapshots replay the shipped profile: `sdk/max-tokens-continue` shows a top-level truncated turn resumed and completed; `sdk/max-tokens-unbounded-default` records four consecutive truncations continuing before completion; `session/subagent-max-tokens-continue` shows a child cut off mid-step, resumed by the guard, and returning its finished output through the parent's tool result; `sdk/multi-turn` keeps the ordinary multi-turn behavior intact.
 
 ## Alternatives considered
 
@@ -57,11 +57,12 @@ Keyless recorded-session snapshots replay the shipped profile: `sdk/max-tokens-c
 - The [subagent output selection rule](../../archived/bug-fix/2026-08-10-subagent-empty-terminal-message-output.md) still governs runs where no continuation happens — cancelled children, ACP backends, guard-less compositions — but under the shipped profile a max-tokens child now typically finishes and returns full output.
 - A goal round truncated mid-work no longer stops the driver; the resumed turn continues the same round.
 - The session log gains one plugin-attributed message form per truncation; the summary line is a protocol constant.
-- `maxConsecutive` controls the maximum automatic continuations; the shipped default is three, as recorded in the [bounded-default Agent Note](../bug-fix/2026-09-25-bounded-default-turn-continuation-chain.md).
+- `maxConsecutive` optionally caps a chain; when it is unset, automatic continuations have no count limit.
 
 ## Known limitations and deferred work
 
 - The continuation text is a single fixed prompt; per-task or per-model wording is deferred.
+- Without a configured `maxConsecutive`, repeated truncations can issue model requests and consume tokens until the agent completes or is stopped.
 - Chain state is in-memory; a truncation straddling a process restart is not continued.
 - Delivery waits for whole-agent idle; a hung step delays the continuation until the step settles.
 - The guard asks the model not to repeat itself but does not compare or rewrite resumed output.

@@ -821,17 +821,17 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
     expect(await readFile(path, 'utf8')).toBe(fixture)
   })
 
-  it('limits the default max-tokens continuation chain', async () => {
-    const scenario = sdkScenarios.find(candidate => candidate.name === 'max-tokens-default-cap')
-    if (scenario === undefined) throw new Error('max-tokens-default-cap snapshot is missing')
+  it('continues a default max-tokens chain beyond three truncations', async () => {
+    const scenario = sdkScenarios.find(candidate => candidate.name === 'max-tokens-unbounded-default')
+    if (scenario === undefined) throw new Error('max-tokens-unbounded-default snapshot is missing')
     const sessionPath = join(scenario.dir, 'session.v4.jsonl')
     const events = records(await readFile(sessionPath, 'utf8'))
     expect(events.filter(event => event.type === 'user/message'
       && (event.data as JsonObject | undefined)?.source
-      && ((event.data as JsonObject).source as JsonObject).kind === 'turn-continuation')).toHaveLength(3)
+      && ((event.data as JsonObject).source as JsonObject).kind === 'turn-continuation')).toHaveLength(4)
     expect(events.filter(event => event.type === 'turn/end')
       .map(event => ((event.data as JsonObject).reason as JsonObject).kind))
-      .toEqual(Array.from({ length: 4 }, () => 'max-tokens'))
+      .toEqual([...Array.from({ length: 4 }, () => 'max-tokens'), 'completed'])
   })
 
   for (const scenario of sdkScenarios) {
@@ -897,7 +897,7 @@ describe('TypeScript SDK snapshots over the jsonrpc runtime', () => {
           toolCallId: 'call_dynamic_ping', isError: false, content: [{ type: 'text', text: 'pong' }],
         } } })
       }
-      if (scenario.name === 'max-tokens-default-cap') {
+      if (scenario.name === 'max-tokens-unbounded-default') {
         expect(results.at(-1)?.finalResponse).toBe('Starting the write now.')
       }
       if (scenario.name === 'subagent-activation-limit') {

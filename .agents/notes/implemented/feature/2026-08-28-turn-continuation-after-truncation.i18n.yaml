@@ -12,26 +12,26 @@
   en: 9bcd3605f25a894e
   zh: 0b05d2758b95786c
 /agent-note-auto-continuation-after-output-token-truncation/decision/detection-and-the-truncation-chain:
-  en: 76d32d70d03dd7ab
-  zh: 06a86979dc7ff97b
+  en: 0bc391c6a009057b
+  zh: 153feb732094cec6
 /agent-note-auto-continuation-after-output-token-truncation/decision/delivery:
   en: 4ecfabc1a54272de
   zh: 1bda80ab69718fa9
-/agent-note-auto-continuation-after-output-token-truncation/decision/the-runaway-lever:
-  en: e3112c3e956cbca0
-  zh: 9ef6cfe29b04d1f4
+/agent-note-auto-continuation-after-output-token-truncation/decision/default-limit-and-deployment-cap:
+  en: 59ef0696ebf6a7c5
+  zh: c387335ece00e3d2
 /agent-note-auto-continuation-after-output-token-truncation/decision/interaction-with-the-goal-round-driver:
   en: 65135f3da7eab742
   zh: 6686508fc86e31ca
 /agent-note-auto-continuation-after-output-token-truncation/testing:
-  en: e9f5d0ada19d6ff8
-  zh: 6ecab5536caeddf4
+  en: 9954057bdbb9af8d
+  zh: 8cb71b548e7d06aa
 /agent-note-auto-continuation-after-output-token-truncation/alternatives-considered:
   en: f2ba5c5f02311964
   zh: 863b8db33a0e0620
 /agent-note-auto-continuation-after-output-token-truncation/consequences:
-  en: 01d1f4dcb3fefe32
-  zh: 566682548cbe4b01
+  en: bd898cf9c1bfbf2b
+  zh: f853e681d6f1c9ca
 /agent-note-auto-continuation-after-output-token-truncation/known-limitations-and-deferred-work:
-  en: 8e3bcd8ec8277ad7
-  zh: babb37a544174b0f
+  en: 1a9f009d9a894102
+  zh: 210b85a2d15553f4

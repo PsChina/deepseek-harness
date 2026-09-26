@@ -1,6 +1,7 @@
 # Agent Note: 自动续行链的有界默认值
 
 Status: implemented
+Archived: 2026-09-26
 
 [English](2026-09-25-bounded-default-turn-continuation-chain.md) | 中文
 

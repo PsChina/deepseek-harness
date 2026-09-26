@@ -4037,10 +4037,10 @@ export type ToolPresentationMode = 'native' | 'ptc' | 'both'
  */
 export interface Config {
   /**
-   * Maximum auto-continuations per consecutive-truncation chain (default 3).
-   * A chain counts back-to-back max-tokens endings; any other turn outcome —
-   * completion, abort, error, rejection, or an interrupt — breaks the chain
-   * and resets the count, so later truncations start fresh.
+   * Optional maximum auto-continuations per consecutive-truncation chain;
+   * when omitted, the chain has no limit. A chain counts back-to-back
+   * max-tokens endings; any other turn outcome — completion, abort, error,
+   * rejection, or an interrupt — breaks the chain and resets the count.
    */
   maxConsecutive?: number
 }

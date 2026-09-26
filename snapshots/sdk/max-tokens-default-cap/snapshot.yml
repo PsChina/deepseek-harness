@@ -1,8 +1,0 @@
-version: 1
-scenario: max-tokens-default-cap
-profile: sdk
-composition: sdk-max-tokens-default-cap
-recording: authored
-header:
-  class: default
-  pin: true

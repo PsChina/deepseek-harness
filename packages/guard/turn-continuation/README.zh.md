@@ -9,7 +9,7 @@ kind: "package-reference"
 
 ## 概述
 
-超长的回答一旦超出输出 token 上限，轮次就会在未完工时结束，智能体就此停下。`dsh-turn-continuation` 把该截断当中断而非终点：当轮次因输出 token 上限结束时，守卫在下一次整个 agent 空闲时排入一条固定的续行提示词，从停下的位置准确续行。默认情况下，每个 agent 在一条连续截断链中最多获得三次自动续行；之后再次触顶时会记录警告并停止。部署可以提高 `maxConsecutive` 上限。任何其它轮次结局——完成、中止、错误、拒绝或打断——都会重置计数链。守卫在内存中跟踪每个 agent，并随 `dsh` 基础 bundle 默认启用。
+这个循环卫生守卫会在轮次因模型输出 token 上限被截断后，于整个 agent 下一次空闲时排入一条固定的续行提示词。它会持续续行，直到任务完成、被停止或达到配置的 `maxConsecutive` 上限；默认不限制次数。其它轮次结局都会重置计数链。状态按 agent 保存在内存中。`dsh` 基础 bundle 默认启用此守卫。
 
 ## 目录
 
@@ -25,15 +25,15 @@ kind: "package-reference"
 <a id="use-this-package"></a>
 ## 使用本包
 
-当被截断的回答应当自行完成、而不是等人说"继续"时，挂载此插件。无需学习或接线：`dsh` 基础 bundle 已经运行它。默认允许自动续行三次；较长任务可配置更高的有限上限。
+当被截断的回答应当自行完成、而不是等人说"继续"时，挂载此插件。无需学习或接线：`dsh` 基础 bundle 已经运行它。自动续行默认不限制次数；如果希望续行链在指定次数后停止，可配置有限上限。
 
 ### 何时选用
 
 当长自主轮次——大改动、生成文件、长回答——容易以输出上限截断收场，且正确反应是"接着干"时，选它。当截断应当作为需要人工审查的硬停顿时，避开它；守卫对每次截断只追加一条插件署名的提示词，从不改动被截断的输出本身。
 
-### 设置失控杠杆
+### 设置可选的续行上限
 
-默认值允许每条链自动续行三次。需要更长的续行链时，可配置更高的有限上限：
+仅当部署希望设置有限上限时，才配置 `maxConsecutive`：
 
 ```yaml
 - name: '@deepseek-ai/dsh-turn-continuation'
@@ -43,13 +43,13 @@ kind: "package-reference"
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `maxConsecutive` | `3` | 一条背靠背 max-tokens 结局链内允许的最大自动续行次数；这些续行用完后再次触顶，守卫会记录警告并停止 |
+| `maxConsecutive` | `未设置`（不限次数） | 背靠背 max-tokens 结局链内可选的最大自动续行次数；这些续行用完后再次触顶，守卫会记录警告并停止 |
 
 链只对背靠背的 max-tokens 结局计数：一次完成、中止、出错或被拒绝的轮次会打断它，因此之后的截断从全新计数开始。非整数或小于 1 的 `maxConsecutive` 会在启动时以清晰错误失败，绝不静默改变行为。生成的[配置目录](../../../docs/config-catalog.zh.md#deepseek-aidsh-turn-continuation)记录了所有接受的取值。
 
 ### 你会得到什么
 
-当轮次因输出 token 上限结束时，下一个整个 agent 空闲点会送达下方的续行提示词（插件署名），模型在新轮次中继续同一份工作。续行在会话中以插件折叠行渲染，单行摘要为"previous response hit the output token limit"（上一次响应触及输出 token 上限）。若续行轮次持续触及上限，守卫默认最多再自动续行三次；之后再次截断时会记录警告并停止。
+当轮次因输出 token 上限结束时，下一个整个 agent 空闲点会送达下方的续行提示词（插件署名），模型在新轮次中继续同一份工作。续行在会话中以插件折叠行渲染，单行摘要为"previous response hit the output token limit"（上一次响应触及输出 token 上限）。若续行轮次持续触及上限，守卫会继续排入续行，直到 agent 完成、被停止或达到已配置的 `maxConsecutive` 上限。
 
 -----
 
@@ -121,7 +121,7 @@ Your previous response was cut off by the output token limit before you finished
 
 #### Token 影响
 
-每次自动续行会增加一条小而固定的消息和模型输出。默认上限将一条连续截断链限制为三次自动续行；配置更高的上限会允许更多次续行。
+每次自动续行会增加一条小而固定的消息和模型输出。默认不限制续行链长度；配置 `maxConsecutive` 后，才会限制自动续行和随之产生的请求次数。
 
 #### KV Cache 影响
 
@@ -134,7 +134,7 @@ Your previous response was cut off by the output token limit before you finished
 以下限制界定了守卫不适用的场合。它们是当前包的约束，而不是任务待办。
 
 - **单一固定提示词** — 续行文本是协议常量，不能按任务或模型定制；模型只知道被截断了、该从何处继续。
-- **续行链有有限默认值** — 默认自动续行三次，并在之后再次截断时停止；部署可以配置更高的有限 `maxConsecutive` 值。
+- **默认续行链不封顶** — 连续截断会持续开启模型请求，直到 agent 完成或被停止，因此 token 用量可能不断增加；配置 `maxConsecutive` 可限制续行链。
 - **内存态链条** — 从持久化恢复的会话从全新链开始，因此跨进程重启的截断不会被续行。
 - **仅在空闲点投递** — 续行绝不在轮次中途排队；若 agent 永远达不到空闲（挂起的步骤），续行会等该步骤落定。
 - **不比对被截断输出** — 守卫请模型"不要重复已发送的内容"，但从不比对或改写；若模型从略早处续写，那是模型的错误，且会在会话中可见。
@@ -147,6 +147,6 @@ Your previous response was cut off by the output token limit before you finished
 
 此 Dev Note 为维护者工作上下文，明确不具权威性。已交付行为与限制以各节正文与代码为准。
 
-[Turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.zh.md) 记录了 max-tokens 结局会自动续行的依据；[有界默认值 Agent Note](../../../.agents/notes/implemented/bug-fix/2026-09-25-bounded-default-turn-continuation-chain.zh.md) 记录了有限默认值。守卫与 [goal round driver](../../goal/goal-round-driver/README.zh.md) 都把续行轮次视为同一轮。
+[Turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.zh.md) 记录了 max-tokens 结局会自动续行的依据。守卫与 [goal round driver](../../goal/goal-round-driver/README.zh.md) 都把续行轮次视为同一轮。
 
 </details>

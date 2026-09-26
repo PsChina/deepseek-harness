@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/archived/bug-fix/2026-09-25-bounded-default-turn-continuation-chain.md
+2026-09-25-bounded-default-turn-continuation-chain.md: 9278551a4b7facebcb01371829bfd66f25278825
+2026-09-25-bounded-default-turn-continuation-chain.zh.md: e53e8f5c4ed2698db1a7673b749652f08f3e6c0a

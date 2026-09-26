@@ -1,11 +1,11 @@
 /**
  * Unit suite for @deepseek-ai/dsh-turn-continuation: chain semantics (one
- * continuation per truncation, back-to-back chaining, the default and
- * configured `maxConsecutive` caps, and reset on every non-max-tokens ending), the
- * pinned prompt and notice source, queue-failure containment, and fail-loud
- * configuration — all driven through a real agent loop against the scripted
- * mock adapter (no network). Shipped-profile behavior is covered by the
- * keyless recorded-session snapshots `max-tokens-continue` and
+ * continuation per truncation, back-to-back chaining, the unlimited default
+ * and configured caps, and reset on every non-max-tokens ending); the pinned
+ * prompt and notice source; queue-failure containment; and fail-loud config.
+ * Tests drive a real agent loop against the scripted mock adapter (no network).
+ * Shipped-profile behavior is covered by the keyless recorded-session snapshots
+ * `max-tokens-continue`, `max-tokens-unbounded-default`, and
  * `subagent-max-tokens-continue`.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -93,7 +93,7 @@ describe('truncation continuation', () => {
     const test = await harness([maxTokensResponse('part of the answer'), textResponse('finished')])
     const warn = vi.spyOn(test.ctx.logger, 'warn')
     prompt(test.agent, 'answer the question')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(2))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(2) })
     await test.agent.whenIdle()
 
     expect(requestText(test.adapter.requests[0]!)).not.toContain(CONTINUATION)
@@ -116,9 +116,9 @@ describe('truncation continuation', () => {
       if (agent.id === test.agent.id) statuses.push(status)
     })
     prompt(test.agent, 'long task')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(2))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(2) })
     await test.agent.whenIdle()
-    await vi.waitFor(() => expect(statuses).toHaveLength(4))
+    await vi.waitFor(() => { expect(statuses).toHaveLength(4) })
 
     // The truncation's idle edge must reach the observer, and the continuation
     // turn must then read as running until it itself ends. A synchronous
@@ -134,7 +134,7 @@ describe('truncation continuation', () => {
       textResponse('done'),
     ])
     prompt(test.agent, 'long task')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(3))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(3) })
     await test.agent.whenIdle()
 
     expect(requestText(test.adapter.requests[1]!)).toContain(CONTINUATION)
@@ -150,7 +150,7 @@ describe('truncation continuation', () => {
     )
     const warn = vi.spyOn(test.ctx.logger, 'warn')
     prompt(test.agent, 'long task')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(2))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(2) })
     await test.agent.whenIdle()
 
     // The first truncation earned its continuation; the second hits the cap
@@ -163,19 +163,20 @@ describe('truncation continuation', () => {
     expect(endings(test.agent)).toEqual(['max-tokens', 'max-tokens'])
   })
 
-  it('defaults to three continuations and stops after the next truncation', async () => {
-    const test = await harness(Array.from({ length: 5 }, (_, index) => maxTokensResponse(`cut ${index + 1}`)))
+  it('continues by default through more than three consecutive truncations', async () => {
+    const test = await harness([
+      ...Array.from({ length: 4 }, (_, index) => maxTokensResponse(`cut ${index + 1}`)),
+      textResponse('done'),
+    ])
     const warn = vi.spyOn(test.ctx.logger, 'warn')
     prompt(test.agent, 'long task')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(4))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(5) })
     await test.agent.whenIdle()
 
-    expect(test.adapter.requests).toHaveLength(4)
-    expect(continuations(test.agent)).toHaveLength(3)
-    expect(warn).toHaveBeenCalledTimes(1)
-    expect(warn.mock.calls[0]![0]).toContain(`agent "${test.agent.id}"`)
-    expect(warn.mock.calls[0]![0]).toContain('stopped at 3 consecutive continuations')
-    expect(endings(test.agent)).toEqual(Array.from({ length: 4 }, () => 'max-tokens'))
+    expect(test.adapter.requests).toHaveLength(5)
+    expect(continuations(test.agent)).toHaveLength(4)
+    expect(warn).not.toHaveBeenCalled()
+    expect(endings(test.agent)).toEqual([...Array.from({ length: 4 }, () => 'max-tokens'), 'completed'])
   })
 
   it('resets the chain after a completed turn so later truncations continue again', async () => {
@@ -190,9 +191,9 @@ describe('truncation continuation', () => {
     )
     const warn = vi.spyOn(test.ctx.logger, 'warn')
     prompt(test.agent, 'first long task')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(2))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(2) })
     prompt(test.agent, 'second long task')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(4))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(4) })
     await test.agent.whenIdle()
 
     // The completed continuation turn reset the capped chain, so the second
@@ -211,11 +212,11 @@ describe('truncation continuation', () => {
     ])
     const warn = vi.spyOn(test.ctx.logger, 'warn')
     prompt(test.agent, 'long task')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(2))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(2) })
     test.agent.cancel({ kind: 'user' })
     await test.agent.whenIdle()
     prompt(test.agent, 'another long task')
-    await vi.waitFor(() => expect(test.adapter.requests).toHaveLength(4))
+    await vi.waitFor(() => { expect(test.adapter.requests).toHaveLength(4) })
     await test.agent.whenIdle()
 
     // The aborted continuation broke the chain: the later truncation is
@@ -242,7 +243,7 @@ describe('truncation continuation', () => {
     await ctx.plugin(TurnContinuation, {})
 
     prompt(agent, 'long task')
-    await vi.waitFor(() => expect(adapter.requests).toHaveLength(2))
+    await vi.waitFor(() => { expect(adapter.requests).toHaveLength(2) })
     await agent.whenIdle()
 
     expect(requestText(adapter.requests[1]!)).toContain(CONTINUATION)

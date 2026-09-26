@@ -16,7 +16,7 @@ Status: implemented
 
 ### 检测与截断链
 
-`session/event` 监视持久化的 `turn/end` 事件。对实时 agent 报出 kind 为 `max-tokens` 的原因时，守卫递增该 agent 的链条 `{ consecutive, pending }`；链条存于 `WeakMap<Agent, ChainState>`，在 `agent/session-start` 时预先记录（对守卫挂载前已在运行的 agent 惰性建立）。其它所有结局——完成、中止、出错、拒绝、打断——都会把链条重置为全新计数。检测只读持久化原因，从不参考模型文本或适配器信号，因此每次截断恰好被检测一次。
+`session/event` 监视持久化的 `turn/end` 事件。对实时 agent 报出 kind 为 `max-tokens` 的原因时，守卫会标记续行待处理；仅在配置 `maxConsecutive` 时才递增该 agent 的链条计数。`{ consecutive, pending }` 状态存于 `WeakMap<Agent, ChainState>`，在 `agent/session-start` 时预先记录（对守卫挂载前已在运行的 agent 惰性建立）。其它所有结局——完成、中止、出错、拒绝、打断——都会把链条重置为全新计数。检测只读持久化原因，从不参考模型文本或适配器信号，因此每次截断恰好被检测一次。
 
 ### 投递
 
@@ -28,9 +28,9 @@ Your previous response was cut off by the output token limit before you finished
 
 消息来源为 `{ kind: 'plugin', plugin: 'turn-continuation', form: 'notice', summary: 'previous response hit the output token limit' }`，使这条注入的提示保持可归因，并渲染为插件折叠行而非普通用户提示。排队失败——agent 已销毁、收件箱拒绝——会清空链条并以渲染后的错误告警；循环本身永远看不到这个异常。pending 标记使投递对一次截断产生的任何空闲过渡保持幂等；且只使用整个 agent 空闲点，因此续行绝不会与已占据下一轮次的工作争抢。续跑唤醒被推迟到该 idle 派发之后，使状态观察者观察到恢复的回合处于 running 而非被掩盖的 idle —— [running 状态修复](../bug-fix/2026-09-04-turn-continuation-reports-running.zh.md)。
 
-### 失控杠杆
+### 默认上限与部署配置
 
-链条最初默认无上限：背靠背的截断会不断换取续行，直到工作完成或被中止。当前默认是自动续行三次；[有界默认值 Agent Note](../bug-fix/2026-09-25-bounded-default-turn-continuation-chain.zh.md)记录了这项部分取代。可配置的 `maxConsecutive` 仍要求为 >= 1 的整数：链到达或超过上限时，守卫会记录包含 agent 与上限的警告、重置并停止排队。非整数或小于 1 的值会在插件加载时响亮失败。
+背靠背的截断会持续获得续行，直到工作完成或被停止；默认不限制次数。部署可以把 `maxConsecutive` 设为 >= 1 的整数，为续行链设置上限。达到上限时，守卫会记录包含 agent 与上限的警告、重置并停止排队。非整数或小于 1 的值会在插件加载时响亮失败。
 
 ### 与 goal-round 驱动器的交互
 
@@ -38,9 +38,9 @@ Your previous response was cut off by the output token limit before you finished
 
 ## 测试
 
-单元测试以共享脚本化模型适配器驱动真实 agent loop 与会话服务。覆盖：一次续行完成被截断轮次并逐字断言固定提示词与插件来源；背靠背链条换取两次续行；`maxConsecutive: 1` 上限的警告与停止；完成轮次之后上限重置、使下一次截断获得全新续行；被中止的续行打断链条；对守卫挂载前已在运行的 agent 惰性建立链条；以 max-tokens 结束的孤儿会话不产生任何请求；`followup` 抛错时清空链条并携带渲染后的错误（Error 与非 Error 抛错各一）；以及加载时以精确错误文本拒绝 `maxConsecutive` 取值 0 与 1.5。包内 `src/` 达到逐文件 100% 语句、分支、函数与行覆盖率。
+单元测试以共享脚本化模型适配器驱动真实 agent loop 与会话服务。覆盖：一次续行完成被截断轮次并逐字断言固定提示词与插件来源；默认不限次数时连续四次截断仍会续行；`maxConsecutive: 1` 上限的警告与停止；完成轮次之后上限重置、使下一次截断获得全新续行；被中止的续行打断链条；对守卫挂载前已在运行的 agent 惰性建立链条；以 max-tokens 结束的孤儿会话不产生任何请求；`followup` 抛错时清空链条并携带渲染后的错误（Error 与非 Error 抛错各一）；以及加载时以精确错误文本拒绝 `maxConsecutive` 取值 0 与 1.5。包内 `src/` 达到逐文件 100% 语句、分支、函数与行覆盖率。
 
-无密钥录制会话快照回放已发布 profile：`sdk/max-tokens-continue` 展示顶层被截断轮次被续行并完成；`session/subagent-max-tokens-continue` 展示子 agent 在步骤中途被截断、被守卫续行，并把完成的输出经父侧工具结果返回；`sdk/multi-turn` 保持普通多轮行为不变。
+无密钥录制会话快照回放已发布 profile：`sdk/max-tokens-continue` 展示顶层被截断轮次被续行并完成；`sdk/max-tokens-unbounded-default` 记录连续四次截断仍继续续行，随后完成；`session/subagent-max-tokens-continue` 展示子 agent 在步骤中途被截断、被守卫续行，并把完成的输出经父侧工具结果返回；`sdk/multi-turn` 保持普通多轮行为不变。
 
 ## 考虑过的替代方案
 
@@ -57,11 +57,12 @@ Your previous response was cut off by the output token limit before you finished
 - [子 agent 输出选取规则](../../archived/bug-fix/2026-08-10-subagent-empty-terminal-message-output.md) 仍然管辖没有续行发生的运行——被取消的子 agent、ACP 后端、无守卫的组合——但在已发布 profile 下，max-tokens 子 agent 如今通常会完成并返回完整输出。
 - 中途被截断的 goal round 不再停止驱动器；被续行的轮次延续同一 Round。
 - 会话日志每次截断新增一条插件署名消息；摘要行是协议常量。
-- `maxConsecutive` 控制自动续行的最大次数；随包提供的默认值为三次，详见[有界默认值 Agent Note](../bug-fix/2026-09-25-bounded-default-turn-continuation-chain.zh.md)。
+- `maxConsecutive` 可为续行链设置次数上限；未配置时，自动续行不限次数。
 
 ## 已知限制与遗留工作
 
 - 续行文本是单一固定提示词；按任务或模型定制措辞已延期。
+- 未配置 `maxConsecutive` 时，连续截断会持续发起模型请求并消耗 token，直到 agent 完成或被停止。
 - 链条状态仅存内存；跨进程重启的截断不会被续行。
 - 投递等待整个 agent 空闲；挂起的步骤会推迟续行，直到该步骤落定。
 - 守卫请模型不要重复自己，但不对续行输出做比对或改写。
