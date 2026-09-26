@@ -1579,7 +1579,7 @@ export interface Config extends ProtocolConfig {
 
 - `inject`: `llm`
 - `refs`: `Api` (`@earendil-works/pi-ai`) · `CacheRetention` (`@earendil-works/pi-ai`) · `Model` (`@earendil-works/pi-ai`) · `ModelThinkingLevel` (`@earendil-works/pi-ai`) · `OpenAICompletionsCompat` (`@earendil-works/pi-ai`) · [`RetryPolicyConfig`](../packages/llm/llm/src/index.ts) · `ThinkingBudgets` (`@earendil-works/pi-ai`) · `Transport` (`@earendil-works/pi-ai`) · `Volatile` (`@deepseek-ai/cordis`)
-- `source`: [`packages/llm/llm-pi-ai/src/config.ts:222`](../packages/llm/llm-pi-ai/src/config.ts)
+- `source`: [`packages/llm/llm-pi-ai/src/config.ts:227`](../packages/llm/llm-pi-ai/src/config.ts)
 
 ```ts config-catalog
 /** Plugin configuration: the provider routes this instance owns. */
@@ -1721,6 +1721,13 @@ export interface PiAiModelProfile {
    * declares the offered levels and their wire spellings.
    */
   reasoningEfforts?: false | PiAiReasoningEfforts
+  /**
+   * Sampler values sent per request when this model's reasoning mode matches.
+   * `thinking` is used for enabled efforts; `off` is used when reasoning is
+   * disabled. An explicit request temperature overrides the preset's value.
+   * The endpoint must accept each configured sampler field.
+   */
+  sampling?: PiAiModelSampling | undefined
   /** pi-ai wire-compatibility switches for this model, winning over the route's per field; one its protocol does not declare is refused. */
   compat?: PiAiCompatProfile
 }
@@ -1839,11 +1846,35 @@ export type PiAiModality = Model<Api>['input'][number]
  */
 export type PiAiReasoningEfforts = Partial<Record<ModelThinkingLevel, string | null>>
 
+/** Request sampler presets selected by a model's reasoning mode. */
+export interface PiAiModelSampling {
+  /** Values sent for every enabled reasoning effort, including `low` through `xhigh`. */
+  thinking?: PiAiSamplingPreset | undefined
+  /** Values sent only when the selected reasoning effort is `off`. */
+  off?: PiAiSamplingPreset | undefined
+}
+
 /** One reasoning-dispatch wire format a profile may name. */
 export type PiAiThinkingFormat = NonNullable<OpenAICompletionsCompat['thinkingFormat']>
 
 /** The reasoning-budget field spellings pi-ai accepts. */
 export type PiAiThinkingTokenBudgetField = NonNullable<OpenAICompletionsCompat['thinkingTokenBudgetField']>
+
+/** Sampler values sent with each request to an endpoint that accepts them. */
+export interface PiAiSamplingPreset {
+  /** Sampling temperature; an explicit request temperature takes precedence. */
+  temperature?: number | undefined
+  /** Nucleus sampling probability sent as `top_p`. */
+  top_p?: number | undefined
+  /** Candidate count sent as `top_k`. */
+  top_k?: number | undefined
+  /** Minimum sampling probability sent as `min_p`. */
+  min_p?: number | undefined
+  /** Presence penalty sent as `presence_penalty`. */
+  presence_penalty?: number | undefined
+  /** Repetition penalty sent as `repeat_penalty`, as expected by llama.cpp. */
+  repeat_penalty?: number | undefined
+}
 ```
 <!-- END GENERATED config-catalog:@deepseek-ai/dsh-llm-pi-ai -->
 

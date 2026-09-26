@@ -58,6 +58,7 @@ import type {
 import type { AttachmentStore, ImageAttachmentRef } from '@deepseek-ai/dsh-attachment'
 import { idleWatchdog, timeoutOf } from '@deepseek-ai/dsh-timeout'
 import type { ResolvedPiAiProviderProfile } from './config.ts'
+import type { PiAiSamplingPreset } from './catalog.ts'
 import { toPiContext } from './context.ts'
 import { createModels, getSupportedThinkingLevels } from './models.ts'
 import { toStreamChunks } from './stream.ts'
@@ -128,6 +129,25 @@ function profileOptions(
     ...profile.websocketConnectTimeoutMs === undefined ? {} : { websocketConnectTimeoutMs: profile.websocketConnectTimeoutMs },
     // The agent recovery layer owns visible attempts; one adapter call is one SDK attempt.
     maxRetries: 0,
+  }
+}
+
+/** Copy a selected model sampling preset into pi-ai request options. */
+function samplingOptions(
+  preset: PiAiSamplingPreset | undefined,
+  requestTemperature: number | undefined,
+): Pick<SimpleStreamOptions, 'temperature' | 'samplingParams'> {
+  const temperature = requestTemperature ?? preset?.temperature
+  const samplingParams = {
+    ...preset?.top_p === undefined ? {} : { top_p: preset.top_p },
+    ...preset?.top_k === undefined ? {} : { top_k: preset.top_k },
+    ...preset?.min_p === undefined ? {} : { min_p: preset.min_p },
+    ...preset?.presence_penalty === undefined ? {} : { presence_penalty: preset.presence_penalty },
+    ...preset?.repeat_penalty === undefined ? {} : { repeat_penalty: preset.repeat_penalty },
+  }
+  return {
+    ...temperature === undefined ? {} : { temperature },
+    ...Object.keys(samplingParams).length === 0 ? {} : { samplingParams },
   }
 }
 
@@ -349,6 +369,8 @@ export class PiAiAdapter extends LlmAdapter {
       model,
       options.reasoningEffort ?? profile.reasoning,
     )
+    const configuredSampling = profile.configuredSampling.get(options.model)
+    const selectedSampling = reasoning === 'off' ? configuredSampling?.off : configuredSampling?.thinking
     const apiKey = await this.config.resolveApiKey(options.provider, profile)
 
     const consumer = new AbortController()
@@ -383,7 +405,7 @@ export class PiAiAdapter extends LlmAdapter {
         }, onReplayDegrade)
       const events = snapshot.models.streamSimple(model, context, {
         ...profileOptions(profile, reasoning, apiKey),
-        ...options.temperature === undefined ? {} : { temperature: options.temperature },
+        ...samplingOptions(selectedSampling, options.temperature),
         ...options.maxTokens === undefined ? {} : { maxTokens: options.maxTokens },
         ...options.sessionId === undefined ? {} : { sessionId: String(options.sessionId) },
         signal: watchdog.signal,

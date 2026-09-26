@@ -38,6 +38,7 @@ import type {
   PiAiModality,
   PiAiModelOverride,
   PiAiModelProfile,
+  PiAiModelSampling,
   PiAiReasoningEfforts,
   RouteCatalog,
 } from './catalog.ts'
@@ -84,7 +85,9 @@ export type {
   PiAiModality,
   PiAiModelOverride,
   PiAiModelProfile,
+  PiAiModelSampling,
   PiAiReasoningEfforts,
+  PiAiSamplingPreset,
   PiAiThinkingFormat,
 } from './catalog.ts'
 
@@ -216,6 +219,8 @@ export interface ResolvedPiAiProviderProfile
    * own, so a catalog capability must not appear here.
    */
   configuredMaxTokens: ReadonlyMap<string, number>
+  /** Optional per-model sampler presets selected by reasoning mode. */
+  configuredSampling: ReadonlyMap<string, PiAiModelSampling>
 }
 
 /** Plugin configuration: the provider routes this instance owns. */
@@ -299,6 +304,19 @@ const reasoningEfforts = z.dict(
   z.union(THINKING_LEVELS),
 ) as unknown as z<PiAiReasoningEfforts>
 
+const samplingPreset = z.object({
+  temperature: z.union([z.const(undefined), z.number().min(0)]),
+  top_p: z.union([z.const(undefined), z.number().min(0).max(1)]),
+  top_k: z.union([z.const(undefined), z.number().step(1).min(0)]),
+  min_p: z.union([z.const(undefined), z.number().min(0).max(1)]),
+  presence_penalty: z.union([z.const(undefined), z.number()]),
+  repeat_penalty: z.union([z.const(undefined), z.number().min(Number.MIN_VALUE)]),
+})
+const modelSampling = z.object({
+  thinking: z.union([z.const(undefined), samplingPreset]),
+  off: z.union([z.const(undefined), samplingPreset]),
+})
+
 /** The fields a `models` entry and a `modelOverrides` value share; only the id's home differs. */
 const modelFields = {
   name: z.string(),
@@ -312,6 +330,7 @@ const modelFields = {
   // `{}`, and absent must stay distinguishable — it means "inherit the
   // installed catalog's capability", while `false` disables reasoning.
   reasoningEfforts: z.union([z.const(false), reasoningEfforts]),
+  sampling: z.union([z.const(undefined), modelSampling]),
   compat: compatProfile,
 }
 
@@ -501,6 +520,7 @@ export function resolveProfiles(
       ...rest.headers === undefined ? {} : { headers: { ...rest.headers } },
       ...rest.thinkingBudgets === undefined ? {} : { thinkingBudgets: { ...rest.thinkingBudgets } },
       configuredMaxTokens: catalog?.configuredMaxTokens ?? new Map(),
+      configuredSampling: catalog?.configuredSampling ?? new Map(),
       modelErrors: catalog?.modelErrors ?? new Map(),
       ...piProvider === undefined ? {} : { piProvider },
       ...catalogError === undefined ? {} : { catalogError },

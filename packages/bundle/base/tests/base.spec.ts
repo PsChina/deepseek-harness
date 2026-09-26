@@ -19,6 +19,31 @@ function isUnknownArray(value: unknown): value is unknown[] {
   return Array.isArray(value)
 }
 
+const QWEN_REASONING_EFFORTS = {
+  off: 'none',
+  low: 'low',
+  medium: 'medium',
+  xhigh: 'xhigh',
+}
+const QWEN_SAMPLING = {
+  thinking: {
+    temperature: 1,
+    top_p: 0.95,
+    top_k: 20,
+    min_p: 0,
+    presence_penalty: 0,
+    repeat_penalty: 1,
+  },
+  off: {
+    temperature: 0.7,
+    top_p: 0.8,
+    top_k: 20,
+    min_p: 0,
+    presence_penalty: 1.5,
+    repeat_penalty: 1,
+  },
+}
+
 describe('dsh-base bundle', () => {
   it('declares a parseable patch list through the dsh.bundle.patch manifest field', () => {
     const root = fileURLToPath(new URL('..', import.meta.url))
@@ -75,10 +100,20 @@ describe('dsh-base bundle', () => {
     if (!isUnknownArray(models)) throw new TypeError('base patch must configure Qwen3.8 models')
     const q3 = models.find(model => isRecord(model) && model['id'] === 'Qwen3.8-27B-Q3')
     if (!isRecord(q3)) throw new TypeError('base patch must configure the Qwen3.8 Q3 model')
-    expect(q3).toMatchObject({ contextWindow: 82_000, maxTokens: 9_216 })
+    expect(q3).toMatchObject({
+      contextWindow: 82_000,
+      maxTokens: 9_216,
+      reasoningEfforts: QWEN_REASONING_EFFORTS,
+      sampling: QWEN_SAMPLING,
+    })
     const q2 = models.find(model => isRecord(model) && model['id'] === 'Qwen3.8-27B-Q2')
     if (!isRecord(q2)) throw new TypeError('base patch must configure the Qwen3.8 Q2 model')
-    expect(q2).toMatchObject({ contextWindow: 100_000, maxTokens: 16_384 })
+    expect(q2).toMatchObject({
+      contextWindow: 100_000,
+      maxTokens: 16_384,
+      reasoningEfforts: QWEN_REASONING_EFFORTS,
+      sampling: QWEN_SAMPLING,
+    })
   })
 
   it('gates each shell stack by platform with a symmetric disabled expression', () => {

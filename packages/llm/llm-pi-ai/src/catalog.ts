@@ -213,6 +213,30 @@ export function catalogModels(provider: string): Map<string, Model<Api>> {
  */
 export type PiAiReasoningEfforts = Partial<Record<ModelThinkingLevel, string | null>>
 
+/** Sampler values sent with each request to an endpoint that accepts them. */
+export interface PiAiSamplingPreset {
+  /** Sampling temperature; an explicit request temperature takes precedence. */
+  temperature?: number | undefined
+  /** Nucleus sampling probability sent as `top_p`. */
+  top_p?: number | undefined
+  /** Candidate count sent as `top_k`. */
+  top_k?: number | undefined
+  /** Minimum sampling probability sent as `min_p`. */
+  min_p?: number | undefined
+  /** Presence penalty sent as `presence_penalty`. */
+  presence_penalty?: number | undefined
+  /** Repetition penalty sent as `repeat_penalty`, as expected by llama.cpp. */
+  repeat_penalty?: number | undefined
+}
+
+/** Request sampler presets selected by a model's reasoning mode. */
+export interface PiAiModelSampling {
+  /** Values sent for every enabled reasoning effort, including `low` through `xhigh`. */
+  thinking?: PiAiSamplingPreset | undefined
+  /** Values sent only when the selected reasoning effort is `off`. */
+  off?: PiAiSamplingPreset | undefined
+}
+
 /**
  * Whether one pi-ai compat field is configurable on a profile.
  *
@@ -605,6 +629,13 @@ export interface PiAiModelProfile {
    * declares the offered levels and their wire spellings.
    */
   reasoningEfforts?: false | PiAiReasoningEfforts
+  /**
+   * Sampler values sent per request when this model's reasoning mode matches.
+   * `thinking` is used for enabled efforts; `off` is used when reasoning is
+   * disabled. An explicit request temperature overrides the preset's value.
+   * The endpoint must accept each configured sampler field.
+   */
+  sampling?: PiAiModelSampling | undefined
   /** pi-ai wire-compatibility switches for this model, winning over the route's per field; one its protocol does not declare is refused. */
   compat?: PiAiCompatProfile
 }
@@ -814,6 +845,8 @@ export interface RouteCatalog {
    * picked, so only an explicit configuration lands here.
    */
   configuredMaxTokens: ReadonlyMap<string, number>
+  /** Model-specific thinking/off sampling presets selected by the adapter. */
+  configuredSampling: ReadonlyMap<string, PiAiModelSampling>
 }
 
 /**
@@ -879,6 +912,7 @@ export function resolveRouteModels(
   assertOfferedCompatFields(provider, 'route', request.compat)
   const seen = new Set<string>()
   const configuredMaxTokens = new Map<string, number>()
+  const configuredSampling = new Map<string, PiAiModelSampling>()
   const resolveEntry = (entry: PiAiModelProfile): Model<Api> => {
     assertOfferedCompatFields(provider, `model "${entry.id}"`, entry.compat)
     if (entry.id.length === 0) invalid(provider, 'has a model with an empty id')
@@ -909,6 +943,15 @@ export function resolveRouteModels(
     // Only a value the profile named is a deployment choice; the catalog's is
     // the model's capability and stays out of request defaults.
     if (entry.maxTokens !== undefined) configuredMaxTokens.set(entry.id, entry.maxTokens)
+    if (entry.sampling !== undefined) {
+      for (const mode of ['thinking', 'off'] as const) {
+        const preset = entry.sampling[mode]
+        if (preset !== undefined && Object.values(preset).every(value => value === undefined)) {
+          invalid(provider, `model "${entry.id}" sampling.${mode} must set at least one parameter`)
+        }
+      }
+      configuredSampling.set(entry.id, entry.sampling)
+    }
     return {
       // The installed entry lays the floor, and the fields below override it.
       // Enumerating instead would silently drop every `Model` field this
@@ -953,5 +996,5 @@ export function resolveRouteModels(
     invalid(provider, `sets compat "${field}", but no model on the route speaks a protocol that takes it;`
       + ` it exists on ${takers.join(', ')}`)
   }
-  return { models: serviceableModels, configuredMaxTokens, modelErrors }
+  return { models: serviceableModels, configuredMaxTokens, configuredSampling, modelErrors }
 }

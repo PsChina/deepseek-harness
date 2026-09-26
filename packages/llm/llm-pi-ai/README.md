@@ -70,6 +70,13 @@ Each profile may set a `retryPolicy`; omission uses normal mode with five retrie
             reasoningEfforts:
               off:
               high: high
+            sampling:
+              thinking:
+                temperature: 1
+                top_p: 0.95
+              off:
+                temperature: 0.7
+                top_p: 0.8
 ```
 
 | Field | Default | Meaning |
@@ -100,7 +107,7 @@ A profile's `models` list replaces the route's installed catalog rather than ext
 
 ### Run with reasoning and wire compatibility
 
-`reasoningEfforts` declares a model's selectable thinking levels: each key is a level selectors offer, its value the spelling dispatch sends on the wire, so `max: ultra` renames a level for a gateway with its own vocabulary. Omitting the field keeps the installed catalog entry's capability; `false` declares a non-reasoning model. `compat` switches reshape the request for endpoints pi-ai cannot recognize — which role carries the system prompt, which field caps output, how a thinking level travels — configurable per route and per model. A model neither the entry nor the installed catalog sizes takes the route's `defaultContextWindow` and `defaultMaxTokens` fallbacks.
+`reasoningEfforts` controls the effort menu for one model: each key is a Harness effort id and its value is the wire spelling sent for that id. For example, `max: xhigh` makes the menu's `Max` choice send `xhigh`; it does not create a new model capability. Declare only levels the endpoint supports. This is why the Qwen profile offers `low`, `medium`, and `xhigh` plus the Harness `off` switch, instead of pretending `minimal`, `high`, or `max` are separate Qwen levels. Omitting the field keeps the installed catalog entry's capability; `false` declares a non-reasoning model. The optional per-model `sampling` block sends `thinking` values for every enabled effort and `off` values when reasoning is disabled. Those values are request parameters, not effort names; an explicit request temperature takes precedence over the selected preset. `compat` switches reshape the request for endpoints pi-ai cannot recognize — which role carries the system prompt, which field caps output, how a thinking level travels — configurable per route and per model. A model neither the entry nor the installed catalog sizes takes the route's `defaultContextWindow` and `defaultMaxTokens` fallbacks.
 
 For self-hosted Chat Completions endpoints, `thinkingTokenBudgetField` selects the reasoning-budget parameter, and `vllmPriority` sets an integer scheduler priority when the server enables priority scheduling. Template arguments accept `$var: thinking.budget`. `openai-responses` gateways can set `supportsMaxOutputTokens: false` to omit `max_output_tokens`; Azure and Codex transports ignore this shared compatibility field. These controls are opt-in; catalog-owned Anthropic effort and fallback capabilities are not configurable switches.
 

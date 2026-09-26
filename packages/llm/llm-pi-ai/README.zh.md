@@ -70,6 +70,13 @@ kind: "package-reference"
             reasoningEfforts:
               off:
               high: high
+            sampling:
+              thinking:
+                temperature: 1
+                top_p: 0.95
+              off:
+                temperature: 0.7
+                top_p: 0.8
 ```
 
 | 字段 | 默认值 | 含义 |
@@ -100,7 +107,7 @@ profile 的 `models` 列表会替换而非扩展路由的已安装目录；每�
 
 ### 带推理（reasoning）与协议兼容运行
 
-`reasoningEfforts` 声明模型可选择的 thinking 等级：每个键都是选择器提供的等级，其值是分派时在协议中发送的拼写，因此 `max: ultra` 可以为拥有自有词汇的网关重命名等级。省略该字段时保留已安装目录条目的能力；`false` 声明非推理模型。对于 pi-ai 无法识别的端点，`compat` 开关重塑请求——哪个角色携带系统提示词、哪个字段限制输出、thinking 等级如何传递——可逐路由、逐模型配置。条目与已安装目录都没有尺寸的模型，会采用路由的 `defaultContextWindow` 与 `defaultMaxTokens` 回退值。
+`reasoningEfforts` 控制单个模型的思考档位菜单：每个键是 Harness 档位 ID，其值是该档位实际发送到线路上的拼写。例如 `max: xhigh` 会让菜单中的 `Max` 选项发送 `xhigh`，但不会为模型创造新的能力；只应声明端点实际支持的档位。因此 Qwen profile 只开放 `low`、`medium`、`xhigh` 和 Harness 的 `off` 开关，不会把 `minimal`、`high` 或 `max` 假装成独立的 Qwen 档位。省略该字段时保留已安装目录条目的能力；`false` 声明非推理模型。可选的逐模型 `sampling` 区块会在任意启用思考的档位发送 `thinking` 参数，并在关闭思考时发送 `off` 参数。这些值是请求采样参数，不是思考档位名称；显式请求温度优先于所选预设。对于 pi-ai 无法识别的端点，`compat` 开关重塑请求——哪个角色携带系统提示词、哪个字段限制输出、thinking 等级如何传递——可逐路由、逐模型配置。条目与已安装目录都没有尺寸的模型，会采用路由的 `defaultContextWindow` 与 `defaultMaxTokens` 回退值。
 
 对于自托管 Chat Completions 端点，`thinkingTokenBudgetField` 选择推理预算参数，`vllmPriority` 在服务端启用优先级调度时设置整数调度优先级。模板参数接受 `$var: thinking.budget`。`openai-responses` 网关可设置 `supportsMaxOutputTokens: false` 来省略 `max_output_tokens`；Azure 与 Codex 传输会忽略这个共享兼容字段。这些控制均需显式启用；目录拥有的 Anthropic effort 和回退能力不是可配置开关。
 

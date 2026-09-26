@@ -85,6 +85,55 @@ describe('modality schema boundary', () => {
   })
 })
 
+describe('model sampling profiles', () => {
+  it('validates and retains thinking and thinking-off sampling per model', () => {
+    const preset = {
+      temperature: 1,
+      top_p: 0.95,
+      top_k: 20,
+      min_p: 0,
+      presence_penalty: 0,
+      repeat_penalty: 1,
+    }
+    const offPreset = {
+      temperature: 0.7,
+      top_p: 0.8,
+      top_k: 20,
+      min_p: 0,
+      presence_penalty: 1.5,
+      repeat_penalty: 1,
+    }
+    const parsed = configWith({ sampling: { thinking: preset, off: offPreset } })()
+    expect(() => parsed).not.toThrow()
+
+    const resolved = resolveProfiles({
+      'acme-gateway': {
+        api: 'openai-completions',
+        baseURL: 'https://acme.test',
+        models: [{ id: 'm', sampling: { thinking: preset, off: offPreset } }],
+      },
+    })
+    expect(resolved.get('acme-gateway')?.configuredSampling.get('m'))
+      .toEqual({ thinking: preset, off: offPreset })
+  })
+
+  it('rejects sampler values outside their documented numeric ranges', () => {
+    expect(configWith({ sampling: { thinking: { top_p: 1.1 } } })).toThrow()
+    expect(configWith({ sampling: { off: { top_k: 1.5 } } })).toThrow()
+    expect(configWith({ sampling: { thinking: { repeat_penalty: 0 } } })).toThrow()
+  })
+
+  it('rejects an empty sampler preset when resolving a profile', () => {
+    expect(() => resolveProfiles({
+      'acme-gateway': {
+        api: 'openai-completions',
+        baseURL: 'https://acme.test',
+        models: [{ id: 'm', sampling: { thinking: {} } }],
+      },
+    })).toThrow(/sampling\.thinking must set at least one parameter/)
+  })
+})
+
 describe('request image policy bounds', () => {
   it.each([
     ['requestImagePixelBudget', 0, /requestImagePixelBudget must be a positive safe integer/],

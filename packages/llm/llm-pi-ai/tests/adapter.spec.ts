@@ -606,6 +606,38 @@ describe('provider profile lifecycle', () => {
     })
   })
 
+  it('limits the Qwen effort picker to its declared native levels plus Off', async () => {
+    const ctx = new Context()
+    await ctx.plugin(LlmRuntime)
+    await ctx.plugin(LlmPiAi, {
+      providers: {
+        qwen38: {
+          api: 'openai-completions',
+          baseURL: 'http://qwen.test/v1',
+          reasoning: 'xhigh',
+          models: [{
+            id: 'Qwen3.8-27B-Q3',
+            contextWindow: 82_000,
+            maxTokens: 9_216,
+            reasoningEfforts: { off: 'none', low: 'low', medium: 'medium', xhigh: 'xhigh' },
+          }],
+        },
+      },
+    })
+
+    await expect(ctx.llm.resolveModelInfo('qwen38', 'Qwen3.8-27B-Q3')).resolves.toMatchObject({
+      reasoning: {
+        efforts: [
+          { id: ReasoningEffortId('off'), name: 'Off' },
+          { id: ReasoningEffortId('low'), name: 'Low' },
+          { id: ReasoningEffortId('medium'), name: 'Medium' },
+          { id: ReasoningEffortId('xhigh'), name: 'Xhigh' },
+        ],
+        defaultEffort: ReasoningEffortId('xhigh'),
+      },
+    })
+  })
+
   it('sends the declared wire spelling and refuses undeclared levels before network I/O', async () => {
     vi.stubEnv('PI_TEST_KEY', 'test-key')
     const server = await mockServer([{ events: textEvents }])

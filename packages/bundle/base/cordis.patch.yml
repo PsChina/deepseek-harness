@@ -154,14 +154,28 @@
                 input:
                   - text
                   - image
+                # Qwen's native efforts are low, medium, and xhigh (default).
+                # `off` disables thinking through llama.cpp's `none` effort value.
                 reasoningEfforts:
                   "off": none
-                  minimal: minimal
                   low: low
                   medium: medium
-                  high: high
-                  xhigh: extra
-                  max: ultra
+                  xhigh: xhigh
+                sampling:
+                  thinking:
+                    temperature: 1
+                    top_p: 0.95
+                    top_k: 20
+                    min_p: 0
+                    presence_penalty: 0
+                    repeat_penalty: 1
+                  off:
+                    temperature: 0.7
+                    top_p: 0.8
+                    top_k: 20
+                    min_p: 0
+                    presence_penalty: 1.5
+                    repeat_penalty: 1
               - id: Qwen3.8-27B-Q2
                 name: Qwen3.8 27B Q2
                 contextWindow: 100000
@@ -169,14 +183,27 @@
                 input:
                   - text
                   - image
+                # Keep Q2's picker choices aligned with the native Qwen efforts.
                 reasoningEfforts:
                   "off": none
-                  minimal: minimal
                   low: low
                   medium: medium
-                  high: high
-                  xhigh: extra
-                  max: ultra
+                  xhigh: xhigh
+                sampling:
+                  thinking:
+                    temperature: 1
+                    top_p: 0.95
+                    top_k: 20
+                    min_p: 0
+                    presence_penalty: 0
+                    repeat_penalty: 1
+                  off:
+                    temperature: 0.7
+                    top_p: 0.8
+                    top_k: 20
+                    min_p: 0
+                    presence_penalty: 1.5
+                    repeat_penalty: 1
 
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'

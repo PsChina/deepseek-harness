@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ReasoningEffortId } from '@deepseek-ai/dsh-llm'
 import type { StreamChunk } from '@deepseek-ai/dsh-llm'
 
 const streamSimple = vi.hoisted(() => vi.fn())
@@ -32,12 +33,18 @@ function gatewayAdapter(): PiAiAdapter {
   })
 }
 
-async function drain(adapter: PiAiAdapter): Promise<StreamChunk[]> {
+async function drain(
+  adapter: PiAiAdapter,
+  reasoningEffort?: string,
+  temperature?: number,
+): Promise<StreamChunk[]> {
   const chunks: StreamChunk[] = []
   for await (const chunk of adapter.stream({
     provider: 'local-gateway',
     model: 'local-model',
     messages: [],
+    ...reasoningEffort === undefined ? {} : { reasoningEffort: ReasoningEffortId(reasoningEffort) },
+    ...temperature === undefined ? {} : { temperature },
   })) chunks.push(chunk)
   return chunks
 }
@@ -70,6 +77,60 @@ describe('pi-ai SDK retry boundary', () => {
       baseUrl: 'http://127.0.0.1:9/v1',
       contextWindow: 8192,
       maxTokens: 1024,
+    })
+  })
+
+  it('selects per-model sampling presets by reasoning mode and preserves an explicit temperature', async () => {
+    const adapter = new PiAiAdapter({
+      profiles: () => resolveProfiles({
+        'local-gateway': {
+          api: 'openai-completions',
+          baseURL: 'http://127.0.0.1:9/v1',
+          reasoning: 'xhigh',
+          models: [{
+            id: 'local-model',
+            contextWindow: 8192,
+            maxTokens: 1024,
+            reasoningEfforts: { off: 'none', low: 'low', medium: 'medium', xhigh: 'xhigh' },
+            sampling: {
+              thinking: { temperature: 1, top_p: 0.95, top_k: 20, min_p: 0, presence_penalty: 0, repeat_penalty: 1 },
+              off: { temperature: 0.7, top_p: 0.8, top_k: 20, min_p: 0, presence_penalty: 1.5, repeat_penalty: 1 },
+            },
+          }],
+        },
+      }),
+      resolveApiKey: () => Promise.resolve('test-key'),
+      auth: memoryAuth(),
+    })
+
+    await drain(adapter)
+    expect(streamSimple.mock.calls[0]?.[2]).toMatchObject({
+      temperature: 1,
+      samplingParams: {
+        top_p: 0.95,
+        top_k: 20,
+        min_p: 0,
+        presence_penalty: 0,
+        repeat_penalty: 1,
+      },
+    })
+
+    await drain(adapter, 'off')
+    expect(streamSimple.mock.calls[1]?.[2]).toMatchObject({
+      temperature: 0.7,
+      samplingParams: {
+        top_p: 0.8,
+        top_k: 20,
+        min_p: 0,
+        presence_penalty: 1.5,
+        repeat_penalty: 1,
+      },
+    })
+
+    await drain(adapter, 'off', 0.25)
+    expect(streamSimple.mock.calls[2]?.[2]).toMatchObject({
+      temperature: 0.25,
+      samplingParams: { top_p: 0.8, presence_penalty: 1.5 },
     })
   })
 })

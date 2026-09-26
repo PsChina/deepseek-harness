@@ -82,8 +82,10 @@ export type {
   PiAiModality,
   PiAiModelOverride,
   PiAiModelProfile,
+  PiAiModelSampling,
   PiAiProviderProfile,
   PiAiReasoningEfforts,
+  PiAiSamplingPreset,
   PiAiThinkingFormat,
   ResolvedPiAiProviderProfile,
 } from './config.ts'
