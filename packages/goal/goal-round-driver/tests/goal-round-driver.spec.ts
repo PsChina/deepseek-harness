@@ -242,6 +242,7 @@ describe('same-session goal driving', () => {
   it.each([
     ['rate limit', new LlmError('slow down', 'RATE_LIMIT')],
     ['request error', new Error('provider broke')],
+    ['max tokens', maxTokensResponse('unfinished')],
   ] as const)('disarms automatic continuation after a %s', async (_label, response) => {
     const test = await harness([response])
     test.ctx.goals.create(test.agent, { objective: 'stop safely', maxGoalRounds: 8 })
@@ -251,20 +252,6 @@ describe('same-session goal driving', () => {
 
     expect(goal).toMatchObject({ roundsStarted: 1, activation: 'disarmed' })
     expect(test.adapter.requests).toHaveLength(1)
-  })
-
-  it('keeps a goal armed through a max-tokens ending so the round continues', async () => {
-    const test = await harness([maxTokensResponse('unfinished'), textResponse('finished')])
-    test.ctx.goals.create(test.agent, { objective: 'truncation is not a stop', maxGoalRounds: 2 })
-
-    const goal = await waitForGoal(test.ctx, test.agent, current => current?.phase === 'blocked')
-
-    expect(goal).toMatchObject({ roundsStarted: 2, activation: 'disarmed' })
-    expect(goal?.blockedReason).toEqual({
-      code: 'round-limit',
-      message: 'Goal reached its configured limit of 2 rounds.',
-    })
-    expect(test.adapter.requests).toHaveLength(2)
   })
 
   it('maps a downstream step rejection to blocked without entering the round', async () => {
@@ -321,6 +308,32 @@ describe('same-session goal driving', () => {
     // represented by their own durable event.
     expect(test.agent.session.snapshotEvents().some(event => event.type === 'user/message'
       && event.data.source.kind === 'goal' && event.data.source.round > 0)).toBe(false)
+  })
+
+  it('withdraws a round parked behind cancelled human work so later input runs', async () => {
+    const test = await harness(['hang', 'hang', textResponse('answered 1')])
+    test.ctx.goals.create(test.agent, { objective: 'park behind human work' })
+    await waitForRequests(test.adapter, 1)
+    test.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'human X' }], source: { kind: 'user' } }))
+    test.agent.cancel({ kind: 'user' }, { keepInbox: true })
+    const paused = await waitForGoal(test.ctx, test.agent, goal => goal?.phase === 'paused')
+    // Resuming reserves the next round behind the parked human prompt.
+    test.ctx.goals.resume(test.agent, { id: paused!.id, revision: paused!.revision })
+    await waitForRequests(test.adapter, 2)
+    expect(test.agent.inbox.nextTurn.map(message => message.source.kind)).toEqual(['goal'])
+
+    test.agent.cancel({ kind: 'user' }, { keepInbox: true })
+    await test.agent.whenIdle()
+    expect(test.agent.inbox.nextTurn).toEqual([])
+    // The cancelled turn belonged to human work, so continuation disarms without pausing.
+    expect(test.ctx.goals.get(test.agent)).toMatchObject({ phase: 'active', activation: 'disarmed' })
+    expect(test.agent.session.snapshotEvents().filter(event => event.type === 'agent/inbox/spliced').at(-1)?.data)
+      .toEqual({ target: 'next-turn', start: 0, removedCount: 1, inserted: [], outcome: 'canceled' })
+    test.agent.followup(createUserMessage({ content: [{ type: 'text', text: 'human 1' }], source: { kind: 'user' } }))
+    await waitForRequests(test.adapter, 3)
+
+    expect(requestText(test.adapter.requests[2]!)).toContain('human 1')
+    expect(test.agent.inbox.nextTurn).toEqual([])
   })
 
   it('pauses an admitted round when cancellation aborts an active step', async () => {

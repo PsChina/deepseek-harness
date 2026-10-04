@@ -87,7 +87,6 @@ The guard queues a `user/message` with the pinned continuation text and the plug
 | File | Role |
 |---|---|
 | [`src/index.ts`](src/index.ts) | Plugin entry: `Config` schema, fail-loud validation, chain listeners, delivery |
-| [`src/invariant.ts`](src/invariant.ts) | Invariant companion (no runtime invariant: the chain is private to the guard's own listeners) |
 
 </details>
 
@@ -99,7 +98,7 @@ The guard queues a `user/message` with the pinned continuation text and the plug
 Read these pages when the package-level contract is not enough. They cover the decision rationale and the guard's interaction with the goal machinery.
 
 - [Turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.md) — the "truncation is not a stop" decision and the alternatives considered.
-- [Goal round driver](../../goal/goal-round-driver/README.md) — why a max-tokens ending no longer stops automatic goal rounds: the resumed turn is still the same round.
+- [Goal round driver](../../goal/goal-round-driver/README.md) — how automatic goal rounds stop after a max-tokens ending.
 - [guard group map](../README.md) — the sibling guard packages and the loop-hygiene family.
 
 -----
@@ -147,6 +146,6 @@ These limits define when the guard is a poor fit. They are current package const
 
 This Dev Note is working context for maintainers; it is explicitly non-authoritative. Shipped behavior and limits live in the sections above and the code.
 
-The [turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.md) records why max-tokens endings resume automatically. The guard and the [goal round driver](../../goal/goal-round-driver/README.md) treat a resumed turn as the same round.
+The [turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.md) records why max-tokens endings resume automatically. The [goal round driver](../../goal/goal-round-driver/README.md) disarms a goal after such an ending, so the guard's prompt can continue the current turn without starting another goal round.
 
 </details>

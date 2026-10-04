@@ -87,7 +87,6 @@ kind: "package-reference"
 | 文件 | 职责 |
 |---|---|
 | [`src/index.ts`](src/index.ts) | 插件入口：`Config` schema、响亮失败校验、链监听器、投递 |
-| [`src/invariant.ts`](src/invariant.ts) | 不变量伴生插件（无运行时不变量：链私有于守卫自身监听器） |
 
 </details>
 
@@ -99,7 +98,7 @@ kind: "package-reference"
 当包级契约不够时阅读这些页面。它们覆盖决策依据与守卫同 goal 机制的交互。
 
 - [Turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.zh.md) — "截断不是终点"的决策与考虑过的替代方案。
-- [Goal round driver](../../goal/goal-round-driver/README.zh.md) — 为什么 max-tokens 结局不再停止自动 goal round：被续行的轮次仍是同一轮。
+- [Goal round driver](../../goal/goal-round-driver/README.zh.md) — max-tokens 结局后自动 goal round 如何停止。
 - [guard 组地图](../README.zh.md) — 同组的守卫插件与循环卫生家族。
 
 -----
@@ -147,6 +146,6 @@ Your previous response was cut off by the output token limit before you finished
 
 此 Dev Note 为维护者工作上下文，明确不具权威性。已交付行为与限制以各节正文与代码为准。
 
-[Turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.zh.md) 记录了 max-tokens 结局会自动续行的依据。守卫与 [goal round driver](../../goal/goal-round-driver/README.zh.md) 都把续行轮次视为同一轮。
+[Turn-continuation Agent Note](../../../.agents/notes/implemented/feature/2026-08-28-turn-continuation-after-truncation.zh.md) 记录了 max-tokens 结局会自动续行的依据。[Goal round driver](../../goal/goal-round-driver/README.zh.md) 会在这种结局后停用 goal，因此守卫的提示词可以继续当前轮次，但不会启动新的 goal round。
 
 </details>

@@ -264,15 +264,19 @@ export function apply(ctx: Context): void {
         // Fence the pause to the exact dropped attempt's ref. A resume bumps
         // the revision, so a host pause followed by an immediate resume (before
         // the aborted turn converges to idle) must not re-pause the resumed goal.
-        if (attempt !== undefined
+        const pause = attempt !== undefined
           && (attempt.phase === 'queued' || attempt.phase === 'claimed' || attempt.cancelled)
           && goal !== undefined && goal.phase === 'active' && goal.activation === 'armed'
-          && attempt.goalId === goal.id && attempt.revision === goal.revision) {
+          && attempt.goalId === goal.id && attempt.revision === goal.revision
+        // A reservation still queued when the agent reaches idle cannot run:
+        // withdraw it so human input queued behind it is not stranded.
+        if (pause || attempt?.phase === 'queued') {
           state.attempt = undefined
           try {
-            ctx.goals.pause(agent, goalRef(goal))
+            if (attempt.phase === 'queued') agent.inbox.remove(attempt.messageId)
+            if (pause) ctx.goals.pause(agent, goalRef(goal))
           } catch (error: unknown) {
-            ctx.logger.warn(`goal-round-driver: could not pause cancelled goal for agent "${agent.id}": ${renderThrown(error)}`)
+            ctx.logger.warn(`goal-round-driver: could not settle cancelled goal round for agent "${agent.id}": ${renderThrown(error)}`)
             disarm(state)
           }
         }
@@ -326,9 +330,10 @@ export function apply(ctx: Context): void {
           }
           return
         case 'turn/end':
-          // A max-tokens ending is not a stop: the turn-continuation guard
-          // resumes the same turn, so the round stays live and the goal keeps
-          // its automatic authority.
+          if (event.data.reason.kind === 'max-tokens') {
+            disarm(state)
+            return
+          }
           if (event.data.reason.kind !== 'aborted') return
           if (state.attempt?.phase === 'claimed' || state.attempt?.phase === 'admitted') {
             state.attempt.cancelled = true
